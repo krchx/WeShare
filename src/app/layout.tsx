@@ -13,12 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "WeShare | Real-time File & Text Sharing Platform",
+  title: "WeShare | Real-time File & code Sharing Platform",
   description:
-    "Instantly share files and collaborate on text in real-time using peer-to-peer technology. No sign-up required, just create a room and share the link.",
+    "Instantly share files and collaborate on code in real-time using peer-to-peer technology. No sign-up required, just create a room and share the link.",
   keywords: [
     "file sharing",
-    "text collaboration",
+    "code collaboration",
     "peer-to-peer",
     "WebRTC",
     "real-time sharing",
@@ -33,9 +33,9 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://weshare.vercel.app/",
-    title: "WeShare | Secure Peer-to-Peer File & Text Sharing",
+    title: "WeShare | Secure Peer-to-Peer File & code Sharing",
     description:
-      "Share files and collaborate on text instantly without uploading to servers. Private, secure, and no sign-up required.",
+      "Share files and collaborate on code instantly without uploading to servers. Private, secure, and no sign-up required.",
     siteName: "WeShare",
     images: [
       {

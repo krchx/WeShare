@@ -22,7 +22,7 @@ export default function Home() {
           <div className="w-full md:w-1/2 bg-indigo-600 text-white p-8 flex flex-col justify-center">
             <h1 className="text-4xl font-bold mb-3">WeShare</h1>
             <p className="text-indigo-100 mb-6">
-              Real-time collaboration made simple. Share text and files
+              Real-time collaboration made simple. Share code and files
               instantly.
             </p>
 
@@ -71,7 +71,7 @@ export default function Home() {
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
-                Real-time text collaboration
+                Real-time code collaboration
               </li>
               <li className="flex items-center">
                 <svg
