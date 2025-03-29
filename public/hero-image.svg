@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 252" width="380" height="252">
+  <!-- Background -->
+  <rect width="380" height="252" fill="#f0f4f8" rx="20" ry="20" />
+  
+  <!-- Connection lines animation -->
+  <g stroke="#4299e1" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="12,6">
+    <path d="M100,126 C140,86 240,86 280,126">
+      <animate attributeName="stroke-dashoffset" from="0" to="18" dur="2s" repeatCount="indefinite" />
+    </path>
+    <path d="M280,126 C240,166 140,166 100,126">
+      <animate attributeName="stroke-dashoffset" from="0" to="-18" dur="2s" repeatCount="indefinite" />
+    </path>
+  </g>
+
+  <!-- Left device (sender) -->
+  <g transform="translate(60, 86)">
+    <rect width="80" height="110" rx="8" ry="8" fill="#2b6cb0" />
+    <rect x="6" y="10" width="68" height="76" rx="4" ry="4" fill="#ebf8ff" />
+    <!-- Text lines -->
+    <rect x="13" y="19" width="54" height="5" rx="2.5" ry="2.5" fill="#4299e1" />
+    <rect x="13" y="30" width="40" height="5" rx="2.5" ry="2.5" fill="#4299e1" />
+    <rect x="13" y="41" width="48" height="5" rx="2.5" ry="2.5" fill="#4299e1" />
+    <rect x="13" y="52" width="32" height="5" rx="2.5" ry="2.5" fill="#4299e1" />
+    <!-- Upload arrow -->
+    <circle cx="40" cy="96" r="12" fill="#63b3ed" />
+    <path d="M40,90 v12 M34,96 l6,-6 l6,6" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- Right device (receiver) -->
+  <g transform="translate(240, 86)">
+    <rect width="80" height="110" rx="8" ry="8" fill="#2b6cb0" />
+    <rect x="6" y="10" width="68" height="76" rx="4" ry="4" fill="#ebf8ff" />
+    <!-- Text lines being typed -->
+    <rect x="13" y="19" width="54" height="5" rx="2.5" ry="2.5" fill="#4299e1" />
+    <rect x="13" y="30" width="40" height="5" rx="2.5" ry="2.5" fill="#4299e1" />
+    <rect x="13" y="41" width="48" height="5" rx="2.5" ry="2.5" fill="#4299e1" />
+    <rect x="13" y="52" width="8" height="5" rx="2.5" ry="2.5" fill="#4299e1">
+      <animate attributeName="width" values="8;32;8" dur="1.5s" repeatCount="indefinite" />
+    </rect>
+    <!-- Download arrow -->
+    <circle cx="40" cy="96" r="12" fill="#63b3ed" />
+    <path d="M40,102 v-12 M34,96 l6,6 l6,-6" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+  
+  <!-- File documents in transit -->
+  <g>
+    <g transform="translate(145, 100)">
+      <rect width="16" height="20" fill="#90cdf4" rx="2" ry="2" />
+      <rect x="4" y="4" width="8" height="1.5" fill="white" />
+      <rect x="4" y="8" width="8" height="1.5" fill="white" />
+      <rect x="4" y="12" width="5" height="1.5" fill="white" />
+      <animateMotion path="M0,0 C15,-25 65,-25 80,0" dur="1.5s" repeatCount="indefinite" />
+    </g>
+    <g transform="translate(145, 140)">
+      <rect width="16" height="20" fill="#63b3ed" rx="2" ry="2" />
+      <rect x="4" y="4" width="8" height="1.5" fill="white" />
+      <rect x="4" y="8" width="8" height="1.5" fill="white" />
+      <rect x="4" y="12" width="5" height="1.5" fill="white" />
+      <animateMotion path="M80,0 C65,25 15,25 0,0" dur="1.5s" repeatCount="indefinite" />
+    </g>
+  </g>
+  
+  <!-- "WeShare" text -->
+  <text x="190" y="220" font-family="Arial, sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#2c5282">
+    We<tspan fill="#4299e1">Share</tspan>
+  </text>
+  <text x="190" y="238" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#4a5568">
+    Real-time file &amp; text sharing
+  </text>
+</svg>
