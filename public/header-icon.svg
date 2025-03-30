@@ -1,0 +1,34 @@
+<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient background -->
+  <defs>
+    <linearGradient id="headerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4a5568" />
+      <stop offset="100%" stop-color="#2d3748" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Main text -->
+  <text x="20" y="40" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="white" filter="url(#glow)">
+    We<tspan fill="#48bb78">Share</tspan>
+  </text>
+  
+  <!-- Connection lines representing sharing -->
+  <g stroke="#48bb78" stroke-width="2" opacity="0.7">
+    <path d="M160,30 C175,10 185,50 195,30" fill="none" />
+    <path d="M165,30 C180,15 185,45 190,30" fill="none" />
+  </g>
+  
+  <!-- Sharing nodes -->
+  <circle cx="160" cy="30" r="4" fill="#48bb78" />
+  <circle cx="195" cy="30" r="4" fill="#48bb78" />
+  
+  <!-- Animation for connection lines -->
+  <circle cx="170" cy="25" r="2" fill="white">
+    <animate attributeName="cx" from="160" to="195" dur="2s" repeatCount="indefinite" />
+    <animate attributeName="cy" values="30;20;30" dur="2s" repeatCount="indefinite" />
+  </circle>
+</svg>

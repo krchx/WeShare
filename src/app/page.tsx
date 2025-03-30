@@ -15,7 +15,14 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-6">
+    <main
+      className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-6"
+      style={{
+        backgroundImage: `url('/home-bg.svg')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       <div className="w-full max-w-4xl">
         <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
           {/* Left side - Hero image and branding */}

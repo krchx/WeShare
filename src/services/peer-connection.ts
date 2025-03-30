@@ -29,7 +29,7 @@ export class PeerConnectionManager {
     // Don't connect if already connected or trying to connect to self
     if (this.connections[peerId] || peerId === this.peer.id) return;
 
-    console.log('Connecting to peer:', peerId);
+    // console.log('Connecting to peer:', peerId);
     const conn = this.peer.connect(peerId);
     this.setupConnection(conn);
   }
@@ -42,7 +42,7 @@ export class PeerConnectionManager {
     this.connections[conn.peer] = conn;
 
     conn.on('open', () => {
-      console.log('Connected to peer:', conn.peer);
+      // console.log('Connected to peer:', conn.peer);
       
       // Send introduction message
       this.sendToPeer(conn, {
@@ -60,7 +60,7 @@ export class PeerConnectionManager {
     });
 
     conn.on('close', () => {
-      console.log('Connection closed:', conn.peer);
+      // console.log('Connection closed:', conn.peer);
       delete this.connections[conn.peer];
     });
 

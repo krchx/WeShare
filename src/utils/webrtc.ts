@@ -39,7 +39,7 @@ export class WebRTCService {
    */
   private setupPeerEvents(): void {
     this.peer.on('open', () => {
-      console.log('My peer ID is:', this.peer.id);
+      // console.log('My peer ID is:', this.peer.id);
       this.joinRoom();
     });
 

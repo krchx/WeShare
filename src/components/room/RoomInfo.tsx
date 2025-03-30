@@ -13,20 +13,20 @@ export const RoomInfo: React.FC<RoomInfoProps> = ({
 }) => {
   return (
     <div className="p-4 border-t border-gray-200">
-      <h3 className="font-semibold text-sm uppercase text-gray-500 mb-2">
+      <h3 className="font-semibold text-sm uppercase text-gray-700 mb-2">
         Room Information
       </h3>
 
       <div className="text-sm mb-3">
         <div className="mb-1">
           <span className="font-medium">Your ID: </span>
-          <span className="font-mono text-xs bg-gray-100 px-1 py-0.5 rounded">
+          <span className="font-mono text-xs bg-gray-50 px-1 py-0.5 rounded">
             {userId}
           </span>
         </div>
         <div>
           <span className="font-medium">Room ID: </span>
-          <span className="font-mono text-xs bg-gray-100 px-1 py-0.5 rounded">
+          <span className="font-mono text-xs bg-gray-50 px-1 py-0.5 rounded">
             {roomId}
           </span>
         </div>
@@ -35,7 +35,7 @@ export const RoomInfo: React.FC<RoomInfoProps> = ({
       <div className="text-sm">
         <div className="font-medium mb-1">Connected Peers:</div>
         {peers.length === 0 ? (
-          <p className="text-gray-400 italic text-xs">
+          <p className="text-gray-300 italic text-xs">
             No other peers connected
           </p>
         ) : (

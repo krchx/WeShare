@@ -15,8 +15,10 @@
     "framer-motion": "^12.6.2",
     "next": "15.2.4",
     "peerjs": "^1.5.4",
+    "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-icons": "^5.5.0",
     "simple-peer": "^9.11.1",
     "uuid": "^11.1.0"
   },

@@ -16,8 +16,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
-console.log(process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL)
-
 export class FirebaseService {
   /**
    * Register a user in a room

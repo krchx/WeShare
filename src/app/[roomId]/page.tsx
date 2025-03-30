@@ -34,7 +34,7 @@ export default function Room() {
 
     // Set up message handler
     const unsubscribe = webrtcService.onMessage((message: PeerMessage) => {
-      console.log("Received message:", message.type);
+      // console.log("Received message:", message.type);
 
       if (
         message.type === "text-update" &&
@@ -122,7 +122,14 @@ export default function Room() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div
+      className="flex flex-col min-h-screen bg-gray-100  bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: `url('/room-bg.svg')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       <ConnectionStatus
         roomId={roomId}
         connected={connected}
@@ -131,10 +138,10 @@ export default function Room() {
         onShareRoom={shareRoom}
       />
 
-      <div className="flex flex-1">
+      <div className="flex flex-col md:flex-row flex-1">
         <TextEditor text={text} onChange={handleTextChange} />
 
-        <div className="flex flex-col w-80 border-l border-gray-300">
+        <div className="flex flex-col md:w-80 border-2 border-gray-300 rounded-lg p-4 mx-4 my-2 md:my-4 bg-blue-300/30 backdrop-blur-sm">
           <FileSharing
             localFiles={localFiles}
             sharedFiles={sharedFiles}
