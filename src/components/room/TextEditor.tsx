@@ -4,9 +4,14 @@ import { FaSun, FaMoon } from "react-icons/fa";
 interface TextEditorProps {
   text: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  disabled?: boolean;
 }
 
-export const TextEditor: React.FC<TextEditorProps> = ({ text, onChange }) => {
+export const TextEditor: React.FC<TextEditorProps> = ({
+  text,
+  onChange,
+  disabled = false,
+}) => {
   const [isDarkMode, setIsDarkMode] = useState(true);
 
   const toggleTheme = () => {
@@ -17,7 +22,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({ text, onChange }) => {
 
   return (
     <div
-      className={`flex-1 p-4 flex flex-col ml-3 mb-3 rounded-md backdrop-blur-xs ${
+      className={`flex-1 p-4 flex flex-col m-2 rounded-md backdrop-blur-xs ${
         isDarkMode ? "bg-gray-700/60 text-white/80" : "bg-white text-black"
       }`}
     >
@@ -73,8 +78,9 @@ export const TextEditor: React.FC<TextEditorProps> = ({ text, onChange }) => {
           }`}
           value={text}
           onChange={onChange}
-          placeholder="Start typing here... All changes will sync in real-time with everyone in the room."
+          placeholder="Start typing here..."
           rows={10}
+          disabled={disabled}
         />
       </div>
 

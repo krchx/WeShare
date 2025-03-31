@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { FirebaseService } from "@/services/firebase";
+import { useRoomCreation } from "@/hooks/useRoomCreation";
 
 interface CustomRoomOptionProps {
   onCreateRoom: (roomId: string) => void;
@@ -9,96 +8,8 @@ interface CustomRoomOptionProps {
 export default function CustomRoomOption({
   onCreateRoom,
 }: CustomRoomOptionProps) {
-  const [customRoomId, setCustomRoomId] = useState("");
-  const [isChecking, setIsChecking] = useState(false);
-  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
-  const [error, setError] = useState("");
-  const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Automatic availability check with 1-second debounce
-  useEffect(() => {
-    if (customRoomId) {
-      setIsAvailable(null);
-      setError("");
-
-      // Clear any existing timeout
-      if (checkTimeoutRef.current) {
-        clearTimeout(checkTimeoutRef.current);
-      }
-
-      // Only check if the format is valid
-      if (/^[a-zA-Z0-9]{3,10}$/.test(customRoomId)) {
-        // Set a new timeout
-        checkTimeoutRef.current = setTimeout(() => {
-          checkAvailability();
-        }, 1000);
-      }
-    }
-
-    // Cleanup function
-    return () => {
-      if (checkTimeoutRef.current) {
-        clearTimeout(checkTimeoutRef.current);
-      }
-    };
-  }, [customRoomId]);
-
-  const checkAvailability = async () => {
-    if (!customRoomId.trim()) return;
-
-    // Validate room name format
-    if (!/^[a-zA-Z0-9]{3,10}$/.test(customRoomId)) {
-      setError("Room name must be 3-10 alphanumeric characters");
-      return;
-    }
-
-    setIsChecking(true);
-    try {
-      const exists = await FirebaseService.checkRoomExists(customRoomId);
-      setIsAvailable(!exists);
-      setError(exists ? "This room name is already taken" : "");
-    } catch (err) {
-      setError("Error checking availability");
-      console.error(err);
-    } finally {
-      setIsChecking(false);
-    }
-  };
-
-  const handleCreateRoom = async () => {
-    if (!customRoomId.trim()) {
-      setError("Please enter a room name");
-      return;
-    }
-
-    // Validate room name format
-    if (!/^[a-zA-Z0-9]{3,10}$/.test(customRoomId)) {
-      setError("Room name must be 3-10 alphanumeric characters");
-      return;
-    }
-
-    setIsChecking(true);
-    try {
-      const exists = await FirebaseService.checkRoomExists(customRoomId);
-      setIsChecking(false);
-
-      if (exists) {
-        setIsAvailable(false);
-        setError("This room name is already taken");
-        return;
-      }
-
-      // Room is available
-      setIsAvailable(true);
-      setTimeout(() => {
-        onCreateRoom(customRoomId);
-      }, 500); // Short delay to show the success state
-    } catch (err) {
-      setIsChecking(false);
-      setError("Error checking room availability");
-      console.error(err);
-    }
-  };
+  const { roomId, setRoomId, isChecking, error, isAvailable, createRoom } =
+    useRoomCreation(onCreateRoom);
 
   return (
     <motion.div
@@ -113,8 +24,8 @@ export default function CustomRoomOption({
         <input
           type="text"
           placeholder="Enter custom room name (3-10 chars)"
-          value={customRoomId}
-          onChange={(e) => setCustomRoomId(e.target.value.trim())}
+          value={roomId}
+          onChange={(e) => setRoomId(e.target.value.trim())}
           className={`w-full px-4 py-3 rounded-lg border outline-none transition-all ${
             isAvailable === true
               ? "border-green-500 bg-green-50"
@@ -150,7 +61,7 @@ export default function CustomRoomOption({
           </div>
         )}
       </div>
-      {customRoomId && (
+      {roomId && (
         <div className="mt-2 text-sm">
           {isAvailable === true && (
             <p className="text-green-600">✓ This room name is available</p>
@@ -159,7 +70,7 @@ export default function CustomRoomOption({
             <p className="text-red-600">✗ This room name is already taken</p>
           )}
           {error && <p className="text-red-600">{error}</p>}
-          {!error && !isAvailable && customRoomId && (
+          {!error && !isAvailable && roomId && (
             <p className="text-gray-500">
               Room name must be 3-10 alphanumeric characters
             </p>
@@ -168,11 +79,11 @@ export default function CustomRoomOption({
       )}
 
       <button
-        onClick={handleCreateRoom}
-        disabled={!customRoomId.trim() || isAvailable === false || isChecking}
+        onClick={createRoom}
+        disabled={!roomId.trim() || isAvailable === false || isChecking}
         className={`w-full mt-4 py-3 px-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all flex items-center justify-center
           ${
-            !customRoomId.trim() || isAvailable === false || isChecking
+            !roomId.trim() || isAvailable === false || isChecking
               ? "opacity-50 cursor-not-allowed"
               : "opacity-100"
           }`}

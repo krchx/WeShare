@@ -1,70 +1,175 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 252" width="380" height="252">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <!-- Background Gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EEF2FF" />
+      <stop offset="100%" stop-color="#E0E7FF" />
+    </linearGradient>
+    <!-- Pulse Animation -->
+    <radialGradient id="pulseGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#4F46E5" stop-opacity="0.2">
+        <animate attributeName="stop-opacity" values="0.2;0.1;0.2" dur="3s" repeatCount="indefinite" />
+      </stop>
+      <stop offset="100%" stop-color="#4F46E5" stop-opacity="0">
+        <animate attributeName="stop-opacity" values="0;0.05;0" dur="3s" repeatCount="indefinite" />
+      </stop>
+    </radialGradient>
+  </defs>
+
   <!-- Background -->
-  <rect width="380" height="252" fill="#f0f4f8" rx="20" ry="20" />
+  <rect width="100%" height="100%" fill="url(#bgGradient)" rx="8" />
   
-  <!-- Connection lines animation -->
-  <g stroke="#4299e1" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="12,6">
-    <path d="M100,126 C140,86 240,86 280,126">
-      <animate attributeName="stroke-dashoffset" from="0" to="18" dur="2s" repeatCount="indefinite" />
-    </path>
-    <path d="M280,126 C240,166 140,166 100,126">
-      <animate attributeName="stroke-dashoffset" from="0" to="-18" dur="2s" repeatCount="indefinite" />
-    </path>
-  </g>
+  <!-- Subtle Grid Pattern -->
+  <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#4F46E5" stroke-width="0.2" opacity="0.1" />
+  </pattern>
+  <rect width="100%" height="100%" fill="url(#grid)" />
 
-  <!-- Left device (sender) -->
-  <g transform="translate(60, 86)">
-    <rect width="80" height="110" rx="8" ry="8" fill="#2b6cb0" />
-    <rect x="6" y="10" width="68" height="76" rx="4" ry="4" fill="#ebf8ff" />
-    <!-- Text lines -->
-    <rect x="13" y="19" width="54" height="5" rx="2.5" ry="2.5" fill="#4299e1" />
-    <rect x="13" y="30" width="40" height="5" rx="2.5" ry="2.5" fill="#4299e1" />
-    <rect x="13" y="41" width="48" height="5" rx="2.5" ry="2.5" fill="#4299e1" />
-    <rect x="13" y="52" width="32" height="5" rx="2.5" ry="2.5" fill="#4299e1" />
-    <!-- Upload arrow -->
-    <circle cx="40" cy="96" r="12" fill="#63b3ed" />
-    <path d="M40,90 v12 M34,96 l6,-6 l6,6" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Main Network Visualization -->
+  <g transform="translate(200, 130)">
+    <!-- Pulse Effect -->
+    <circle cx="0" cy="0" r="90" fill="url(#pulseGradient)" />
+    
+    <!-- Connection Lines -->
+    <g stroke="#CBD5E1" stroke-width="1" opacity="0.6">
+      <line x1="-80" y1="0" x2="80" y2="0">
+        <animate attributeName="opacity" values="0.6;0.9;0.6" dur="3s" repeatCount="indefinite" />
+      </line>
+      <line x1="-70" y1="-30" x2="70" y2="-30" />
+      <line x1="-70" y1="30" x2="70" y2="30" />
+      <line x1="-80" y1="0" x2="-70" y2="-30" />
+      <line x1="-80" y1="0" x2="-70" y2="30" />
+      <line x1="80" y1="0" x2="70" y2="-30" />
+      <line x1="80" y1="0" x2="70" y2="30" />
+      <line x1="-70" y1="-30" x2="70" y2="30" stroke-dasharray="3,2" />
+      <line x1="-70" y1="30" x2="70" y2="-30" stroke-dasharray="3,2" />
+    </g>
+    
+    <!-- Data Packets -->
+    <g>
+      <!-- Packet Group 1 -->
+      <g>
+        <rect width="12" height="16" rx="2" fill="#4F46E5" opacity="0.9" transform="translate(-6, -8)">
+          <animateMotion path="M-60,20 C-30,10 30,10 60,20" dur="2.5s" repeatCount="indefinite" />
+        </rect>
+        <rect width="8" height="2" rx="1" fill="white" opacity="0.9" transform="translate(-4, -5)">
+          <animateMotion path="M-60,20 C-30,10 30,10 60,20" dur="2.5s" repeatCount="indefinite" />
+        </rect>
+        <rect width="10" height="2" rx="1" fill="white" opacity="0.9" transform="translate(-5, -1)">
+          <animateMotion path="M-60,20 C-30,10 30,10 60,20" dur="2.5s" repeatCount="indefinite" />
+        </rect>
+      </g>
+      
+      <!-- Packet Group 2 -->
+      <g>
+        <rect width="14" height="18" rx="2" fill="#3B82F6" opacity="0.9" transform="translate(-7, -9)">
+          <animateMotion path="M60,-20 C30,-10 -30,-10 -60,-20" dur="2.5s" repeatCount="indefinite" />
+        </rect>
+        <rect width="8" height="2" rx="1" fill="white" opacity="0.9" transform="translate(-4, -6)">
+          <animateMotion path="M60,-20 C30,-10 -30,-10 -60,-20" dur="2.5s" repeatCount="indefinite" />
+        </rect>
+        <rect width="10" height="2" rx="1" fill="white" opacity="0.9" transform="translate(-5, -2)">
+          <animateMotion path="M60,-20 C30,-10 -30,-10 -60,-20" dur="2.5s" repeatCount="indefinite" />
+        </rect>
+      </g>
+      
+      <!-- Packet Group 3 (Additional) -->
+      <g>
+        <rect width="10" height="14" rx="2" fill="#8B5CF6" opacity="0.9" transform="translate(-5, -7)">
+          <animateMotion path="M-60,-30 C-20,-20 20,-20 60,-30" dur="3s" repeatCount="indefinite" />
+        </rect>
+        <rect width="6" height="2" rx="1" fill="white" opacity="0.9" transform="translate(-3, -5)">
+          <animateMotion path="M-60,-30 C-20,-20 20,-20 60,-30" dur="3s" repeatCount="indefinite" />
+        </rect>
+        <rect width="8" height="2" rx="1" fill="white" opacity="0.9" transform="translate(-4, -1)">
+          <animateMotion path="M-60,-30 C-20,-20 20,-20 60,-30" dur="3s" repeatCount="indefinite" />
+        </rect>
+      </g>
+      
+      <!-- Packet Group 4 (Additional) -->
+      <g>
+        <rect width="10" height="14" rx="2" fill="#8B5CF6" opacity="0.9" transform="translate(-5, -7)">
+          <animateMotion path="M60,30 C20,20 -20,20 -60,30" dur="3.2s" repeatCount="indefinite" />
+        </rect>
+        <rect width="6" height="2" rx="1" fill="white" opacity="0.9" transform="translate(-3, -5)">
+          <animateMotion path="M60,30 C20,20 -20,20 -60,30" dur="3.2s" repeatCount="indefinite" />
+        </rect>
+        <rect width="8" height="2" rx="1" fill="white" opacity="0.9" transform="translate(-4, -1)">
+          <animateMotion path="M60,30 C20,20 -20,20 -60,30" dur="3.2s" repeatCount="indefinite" />
+        </rect>
+      </g>
+    </g>
+    
+    <!-- Network Nodes -->
+    <g>
+      <!-- Main Nodes -->
+      <circle cx="-80" cy="0" r="6" fill="#3B82F6">
+        <animate attributeName="r" values="6;7;6" dur="3s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="80" cy="0" r="6" fill="#3B82F6">
+        <animate attributeName="r" values="6;7;6" dur="3.2s" repeatCount="indefinite" />
+      </circle>
+      
+      <!-- Secondary Nodes -->
+      <circle cx="-70" cy="-30" r="4" fill="#4F46E5">
+        <animate attributeName="r" values="4;5;4" dur="2.8s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="70" cy="-30" r="4" fill="#4F46E5">
+        <animate attributeName="r" values="4;5;4" dur="3.4s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="-70" cy="30" r="4" fill="#4F46E5">
+        <animate attributeName="r" values="4;5;4" dur="3.6s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="70" cy="30" r="4" fill="#4F46E5">
+        <animate attributeName="r" values="4;5;4" dur="2.6s" repeatCount="indefinite" />
+      </circle>
+      
+      <!-- Additional Nodes -->
+      <circle cx="-40" cy="-50" r="3" fill="#8B5CF6" opacity="0.8">
+        <animate attributeName="r" values="3;4;3" dur="2.5s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="40" cy="-50" r="3" fill="#8B5CF6" opacity="0.8">
+        <animate attributeName="r" values="3;4;3" dur="2.7s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="-40" cy="50" r="3" fill="#8B5CF6" opacity="0.8">
+        <animate attributeName="r" values="3;4;3" dur="2.9s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="40" cy="50" r="3" fill="#8B5CF6" opacity="0.8">
+        <animate attributeName="r" values="3;4;3" dur="3.1s" repeatCount="indefinite" />
+      </circle>
+    </g>
   </g>
-
-  <!-- Right device (receiver) -->
-  <g transform="translate(240, 86)">
-    <rect width="80" height="110" rx="8" ry="8" fill="#2b6cb0" />
-    <rect x="6" y="10" width="68" height="76" rx="4" ry="4" fill="#ebf8ff" />
-    <!-- Text lines being typed -->
-    <rect x="13" y="19" width="54" height="5" rx="2.5" ry="2.5" fill="#4299e1" />
-    <rect x="13" y="30" width="40" height="5" rx="2.5" ry="2.5" fill="#4299e1" />
-    <rect x="13" y="41" width="48" height="5" rx="2.5" ry="2.5" fill="#4299e1" />
-    <rect x="13" y="52" width="8" height="5" rx="2.5" ry="2.5" fill="#4299e1">
-      <animate attributeName="width" values="8;32;8" dur="1.5s" repeatCount="indefinite" />
+  
+  <!-- WeShare Branding with Underline Animation -->
+  <g transform="translate(200, 210)">
+    <text x="0" y="0" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" text-anchor="middle">
+      <tspan fill="#1E3A8A">We</tspan><tspan fill="#4F46E5">Share</tspan>
+    </text>
+    
+    <!-- Animated Underline -->
+    <rect x="-40" y="5" width="80" height="2" rx="1" fill="#4F46E5" opacity="0.7">
+      <animate attributeName="width" values="0;80;80" dur="1.5s" begin="0.5s" fill="freeze" />
+      <animate attributeName="x" values="0;-40;-40" dur="1.5s" begin="0.5s" fill="freeze" />
     </rect>
-    <!-- Download arrow -->
-    <circle cx="40" cy="96" r="12" fill="#63b3ed" />
-    <path d="M40,102 v-12 M34,96 l6,6 l6,-6" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+    
+    <text x="0" y="25" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle" fill="#6B7280">
+      Peer-to-peer real-time collaboration
+    </text>
   </g>
   
-  <!-- File documents in transit -->
-  <g>
-    <g transform="translate(145, 100)">
-      <rect width="16" height="20" fill="#90cdf4" rx="2" ry="2" />
-      <rect x="4" y="4" width="8" height="1.5" fill="white" />
-      <rect x="4" y="8" width="8" height="1.5" fill="white" />
-      <rect x="4" y="12" width="5" height="1.5" fill="white" />
-      <animateMotion path="M0,0 C15,-25 65,-25 80,0" dur="1.5s" repeatCount="indefinite" />
-    </g>
-    <g transform="translate(145, 140)">
-      <rect width="16" height="20" fill="#63b3ed" rx="2" ry="2" />
-      <rect x="4" y="4" width="8" height="1.5" fill="white" />
-      <rect x="4" y="8" width="8" height="1.5" fill="white" />
-      <rect x="4" y="12" width="5" height="1.5" fill="white" />
-      <animateMotion path="M80,0 C65,25 15,25 0,0" dur="1.5s" repeatCount="indefinite" />
-    </g>
+  <!-- Decorative Elements -->
+  <g opacity="0.4">
+    <circle cx="30" cy="30" r="2" fill="#4F46E5">
+      <animate attributeName="opacity" values="0.4;0.8;0.4" dur="3s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="370" cy="30" r="2" fill="#4F46E5">
+      <animate attributeName="opacity" values="0.4;0.8;0.4" dur="3.5s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="30" cy="270" r="2" fill="#4F46E5">
+      <animate attributeName="opacity" values="0.4;0.8;0.4" dur="4s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="370" cy="270" r="2" fill="#4F46E5">
+      <animate attributeName="opacity" values="0.4;0.8;0.4" dur="3.2s" repeatCount="indefinite" />
+    </circle>
   </g>
-  
-  <!-- "WeShare" text -->
-  <text x="190" y="220" font-family="Arial, sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#2c5282">
-    We<tspan fill="#4299e1">Share</tspan>
-  </text>
-  <text x="190" y="238" font-family="Arial, sans-serif" font-size="11" text-anchor="middle" fill="#4a5568">
-    Real-time file &amp; code sharing
-  </text>
 </svg>

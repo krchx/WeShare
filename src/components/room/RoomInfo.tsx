@@ -13,7 +13,7 @@ export const RoomInfo: React.FC<RoomInfoProps> = ({
 }) => {
   return (
     <div className="p-4 border-t border-gray-200">
-      <h3 className="font-semibold text-sm uppercase text-gray-700 mb-2">
+      <h3 className="font-semibold text-sm uppercase text-stone-800 mb-2">
         Room Information
       </h3>
 
@@ -42,7 +42,7 @@ export const RoomInfo: React.FC<RoomInfoProps> = ({
           <ul className="space-y-1">
             {peers.map((peer, index) => (
               <li key={index} className="text-xs bg-gray-50 p-1 rounded">
-                <span className="font-mono">{peer.substring(0, 8)}</span>
+                <span className="font-mono">{peer}</span>
               </li>
             ))}
           </ul>

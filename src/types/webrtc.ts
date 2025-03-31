@@ -1,4 +1,8 @@
-export type MessageType = 'text-update' | 'file-share' | 'user-joined';
+export type MessageType =
+  | "text-update"
+  | "file-share"
+  | "user-joined"
+  | "editor-text";
 
 export interface PeerMessage {
   type: MessageType;

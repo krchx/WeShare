@@ -27,7 +27,13 @@ export default function Home() {
         <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
           {/* Left side - Hero image and branding */}
           <div className="w-full md:w-1/2 bg-indigo-600 text-white p-8 flex flex-col justify-center">
-            <h1 className="text-4xl font-bold mb-3">WeShare</h1>
+            <div className="m-6 p-2 bg-white rounded-lg shadow-lg flex items-center justify-center">
+              <img
+                className="h-20 md:w-full"
+                src="/logo.svg"
+                alt="header icon"
+              />
+            </div>
             <p className="text-indigo-100 mb-6">
               Real-time collaboration made simple. Share code and files
               instantly.

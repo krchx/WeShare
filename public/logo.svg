@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" width="240" height="60">
+  <!-- Network nodes and connections -->
+  <circle cx="25" cy="30" r="6" fill="#3B82F6" />
+  <circle cx="45" cy="15" r="4" fill="#4F46E5" />
+  <circle cx="45" cy="45" r="4" fill="#4F46E5" />
+  <circle cx="60" cy="30" r="5" fill="#2563EB" />
+  
+  <!-- Connection lines between nodes -->
+  <line x1="25" y1="30" x2="45" y2="15" stroke="#3B82F6" stroke-width="2" />
+  <line x1="25" y1="30" x2="45" y2="45" stroke="#3B82F6" stroke-width="2" />
+  <line x1="25" y1="30" x2="60" y2="30" stroke="#3B82F6" stroke-width="2" />
+  <line x1="45" y1="15" x2="60" y2="30" stroke="#4F46E5" stroke-width="2" />
+  <line x1="45" y1="45" x2="60" y2="30" stroke="#4F46E5" stroke-width="2" />
+  
+  <!-- Gradient pulse for dynamic sharing effect -->
+  <circle cx="25" cy="30" r="10" fill="none" stroke="#3B82F6" stroke-width="1" opacity="0.5">
+    <animate attributeName="r" from="8" to="14" dur="2s" repeatCount="indefinite" />
+    <animate attributeName="opacity" from="0.6" to="0" dur="2s" repeatCount="indefinite" />
+  </circle>
+  
+  <!-- WeShare text -->
+  <text x="80" y="38" font-family="Geist, Arial, sans-serif" font-weight="600" font-size="24" fill="#2563EB">
+    We<tspan fill="#4F46E5">Share</tspan>
+  </text>
+</svg>
