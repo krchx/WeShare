@@ -117,6 +117,9 @@ export function createMessageHandler(config: MessageHandlerConfig) {
   ) {
     if (message.sender === userId) return;
     // This message contains the initial state of the room
+    if (isTextLoading) {
+      setIsTextLoading(false);
+    }
     const { text, files } = message.data;
     setText(text);
     setSharedFiles(files);

@@ -88,7 +88,7 @@ export class WebRTCService {
     });
 
     // // Listen for other peers joining the room
-    FirebaseService.onPeerJoined(this.roomId, (peerId, userId) => {
+    FirebaseService.onPeerJoined(this.roomId, (peerId) => {
       if (peerId === this.peer.id) return; // Ignore self
       // Avoid connecting to yourself
       this.connectionManager.connectToPeer(peerId);
