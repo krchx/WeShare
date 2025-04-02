@@ -20,6 +20,7 @@ export default function Room() {
     userId,
     shareRoom,
     isTextLoading,
+    downloadingFiles,
   } = useRoom();
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -44,8 +45,7 @@ export default function Room() {
       <ConnectionStatus
         roomId={roomId}
         connected={connected}
-        peerCount={peers.length}
-        userId={userId}
+        isLoading={isTextLoading}
         onShareRoom={shareRoom}
       />
 
@@ -58,6 +58,7 @@ export default function Room() {
 
         <div className="flex flex-col md:w-80 border-2 border-gray-300 rounded-lg p-4 mx-4 my-2 md:my-4 bg-blue-300/30 backdrop-blur-sm">
           <FileSharing
+            downloadingFiles={downloadingFiles}
             localFiles={localFiles}
             sharedFiles={sharedFiles}
             onFileUpload={handleFileUploadWrapper}

@@ -4,16 +4,14 @@ import { ShareRoomModal } from "./ShareRoomModal";
 interface ConnectionStatusProps {
   roomId: string;
   connected: boolean;
-  peerCount: number;
-  userId: string;
+  isLoading: boolean;
   onShareRoom: () => void;
 }
 
 export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   roomId,
   connected,
-  peerCount,
-  userId,
+  isLoading = false,
   onShareRoom,
 }) => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -26,20 +24,21 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   return (
     <div className="p-3 flex items-center justify-between">
       <div>
-        <img className="h-14 md:w-full" src="/logo.svg" alt="header icon" />
+        <img className="h-10 md:h-16" src="/logo.svg" alt="header icon" />
       </div>
-      <div className="flex items-center">
+      <div className="flex items-center flex-col">
         <span className="font-bold text-sm md:text-2xl text-gray-400">
           Room:{roomId}
         </span>
-        {connected ? (
+        {connected && !isLoading ? (
           <span
             className="ml-2 text-green-600 text-xs md:text-sm flex items-center"
             aria-label="Connected"
           >
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-green-600 mr-1.5"></span>
+            Connected
           </span>
-        ) : (
+        ) : !connected ? (
           <span
             className="ml-2 text-amber-600 text-xs md:text-sm flex items-center"
             aria-label="Connecting"
@@ -47,14 +46,18 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-600 mr-1.5 animate-pulse"></span>
             Connecting...
           </span>
+        ) : (
+          <span
+            className="ml-2 text-yellow-500 text-xs md:text-sm flex items-center"
+            aria-label="Loading Text"
+          >
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-yellow-500 mr-1.5 animate-pulse"></span>
+            Loading Text...
+          </span>
         )}
       </div>
 
       <div className="flex items-center space-x-4">
-        {/* {peerCount > 0 && (
-          <span className="text-sm">{peerCount} peer(s) connected</span>
-        )} */}
-
         <button
           onClick={openShareModal}
           className="bg-blue-500 hover:bg-blue-600 text-white text-xs py-2 px-2 md:font-medium md:text-sm md:py-2 md:px-4 rounded-md transition-colors duration-200 flex items-center space-x-0.5 shadow-sm"

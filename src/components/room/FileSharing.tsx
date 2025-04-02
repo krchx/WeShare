@@ -1,11 +1,14 @@
 import React from "react";
 import { SharedFile } from "@/types/webrtc";
 
+type FileItem = File | SharedFile;
+
 interface FileSharingProps {
-  localFiles: File[];
+  localFiles: FileItem[];
   sharedFiles: SharedFile[];
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onDownloadFile: (file: SharedFile) => void;
+  downloadingFiles: Set<string>;
 }
 
 export const FileSharing: React.FC<FileSharingProps> = ({
@@ -13,6 +16,7 @@ export const FileSharing: React.FC<FileSharingProps> = ({
   sharedFiles,
   onFileUpload,
   onDownloadFile,
+  downloadingFiles,
 }) => {
   return (
     <div className="p-4 flex flex-col">
@@ -59,12 +63,18 @@ export const FileSharing: React.FC<FileSharingProps> = ({
                   <span>{(file.size / 1024).toFixed(1)} KB</span>
                   <span>From {file.sender.substring(0, 6)}</span>
                 </div>
-                <button
-                  onClick={() => onDownloadFile(file)}
-                  className="mt-1 text-xs text-blue-600 hover:text-blue-800 hover:cursor-pointer"
-                >
-                  Download
-                </button>
+                {downloadingFiles.has(file.id) ? (
+                  <div className="mt-1 text-xs text-gray-500">
+                    Downloading...
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => onDownloadFile(file)}
+                    className="mt-1 text-xs text-blue-600 hover:text-blue-800 hover:cursor-pointer"
+                  >
+                    Download
+                  </button>
+                )}
               </li>
             ))}
           </ul>

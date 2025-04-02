@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://weshare.vercel.app"),
   title: "WeShare | Real-time File & code Sharing Platform",
   description:
     "Instantly share files and collaborate on code in real-time using peer-to-peer technology. No sign-up required, just create a room and share the link.",

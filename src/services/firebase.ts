@@ -3,7 +3,6 @@ import {
   getDatabase,
   ref,
   set,
-  onValue,
   onChildAdded,
   onDisconnect,
   remove,

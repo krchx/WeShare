@@ -6,12 +6,10 @@ export class PeerConnectionManager {
   private messageHandlers: ((message: PeerMessage) => void)[] = [];
   private peer: Peer;
   private userId: string;
-  private getEditorText: () => string;
 
-  constructor(peer: Peer, userId: string, getEditorText: () => string) {
+  constructor(peer: Peer, userId: string) {
     this.peer = peer;
     this.userId = userId;
-    this.getEditorText = getEditorText;
 
     // Set up connection handler
     this.peer.on("connection", this.handleIncomingConnection.bind(this));
@@ -22,6 +20,7 @@ export class PeerConnectionManager {
    */
   private handleIncomingConnection(conn: DataConnection): void {
     this.setupConnection(conn);
+    this.RoomStateRequest(conn);
   }
 
   /**
@@ -31,7 +30,7 @@ export class PeerConnectionManager {
     // Don't connect if already connected or trying to connect to self
     if (this.connections[peerId] || peerId === this.peer.id) return;
 
-    // console.log('Connecting to peer:', peerId);
+    // console.log("Connecting to peer:", peerId);
     const conn = this.peer.connect(peerId);
     this.setupConnection(conn);
   }
@@ -44,27 +43,15 @@ export class PeerConnectionManager {
     this.connections[conn.peer] = conn;
 
     conn.on("open", () => {
-      // console.log('Connected to peer:', conn.peer);
-
       // Send introduction message
       this.sendToPeer(conn, {
         type: "user-joined",
         data: { userId: this.userId },
         sender: this.userId,
       });
-
-      // Send the current text to the new peer
-      const currentText = this.getEditorText();
-      if (currentText) {
-        this.sendToPeer(conn, {
-          type: "text-update",
-          data: currentText,
-          sender: this.userId,
-        });
-      }
     });
 
-    conn.on("data", (data: any) => {
+    conn.on("data", (data: unknown) => {
       const message = data as PeerMessage;
 
       // Notify all message handlers
@@ -72,7 +59,7 @@ export class PeerConnectionManager {
     });
 
     conn.on("close", () => {
-      // console.log('Connection closed:', conn.peer);
+      console.log("Connection closed:", conn.peer);
       delete this.connections[conn.peer];
     });
 
@@ -83,11 +70,47 @@ export class PeerConnectionManager {
   }
 
   /**
+   * Ask the connected peer for room information
+   */
+  private RoomStateRequest(conn: DataConnection): void {
+    const message: PeerMessage = {
+      type: "room-state-request",
+      data: "",
+      sender: this.userId,
+    };
+
+    conn.on("open", () => {
+      conn.send(message);
+    });
+  }
+
+  /**
    * Send a message to a specific peer
    */
   private sendToPeer(conn: DataConnection, message: PeerMessage): void {
     if (conn.open) {
       conn.send(message);
+    }
+  }
+
+  /**
+   * Send a message to a specific peer by their user ID
+   */
+  public sendToPeerUsingId(userId: string, message: PeerMessage): void {
+    // Find the connection that corresponds to this user ID
+
+    const peerEntry = Object.entries(this.connections).find(([, conn]) => {
+      // Check any stored data about this connection
+      return conn.peer.split("-")[1] === userId;
+    });
+
+    if (peerEntry) {
+      const [, conn] = peerEntry;
+      if (conn.open) {
+        conn.send(message);
+      }
+    } else {
+      console.warn(`No connection found for user ID: ${userId} (${userId})`);
     }
   }
 
