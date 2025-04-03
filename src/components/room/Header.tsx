@@ -1,14 +1,15 @@
 import React, { useState } from "react";
 import { ShareRoomModal } from "./ShareRoomModal";
+import { FaGithub } from "react-icons/fa";
 
-interface ConnectionStatusProps {
+interface HeaderProps {
   roomId: string;
   connected: boolean;
   isLoading: boolean;
   onShareRoom: () => void;
 }
 
-export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
+export const Header: React.FC<HeaderProps> = ({
   roomId,
   connected,
   isLoading = false,
@@ -58,19 +59,29 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
       </div>
 
       <div className="flex items-center space-x-4">
+        <a
+          href="https://github.com/krchx/weshare"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="items-center flex px-2 md:px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors shadow-sm duration-200"
+          aria-label="View source on GitHub"
+        >
+          <FaGithub className="w-7 h-7 md:mr-2" />
+          <span className="hidden md:inline">GitHub Repo</span>
+        </a>
         <button
           onClick={openShareModal}
           className="bg-blue-500 hover:bg-blue-600 text-white text-xs py-2 px-2 md:font-medium md:text-sm md:py-2 md:px-4 rounded-md transition-colors duration-200 flex items-center space-x-0.5 shadow-sm"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
+            className="h-7 w-7"
             viewBox="0 0 20 20"
             fill="currentColor"
           >
             <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
           </svg>
-          <span>Share Room</span>
+          <span className="hidden md:inline">Share Room</span>
         </button>
       </div>
 
@@ -80,7 +91,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
         roomUrl={
           typeof window !== "undefined"
             ? window.location.href
-            : `https://weshare.vercel.app/${roomId}`
+            : `https://weshare-live.vercel.app/${roomId}`
         }
       />
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ConnectionStatus } from "@/components/room/ConnectionStatus";
+import { Header } from "@/components/room/Header";
 import { TextEditor } from "@/components/room/TextEditor";
 import { FileSharing } from "@/components/room/FileSharing";
 import { RoomInfo } from "@/components/room/RoomInfo";
@@ -42,7 +42,7 @@ export default function Room() {
         backgroundPosition: "center",
       }}
     >
-      <ConnectionStatus
+      <Header
         roomId={roomId}
         connected={connected}
         isLoading={isTextLoading}

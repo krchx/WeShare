@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import JoinRoomForm from "@/components/home/JoinRoomForm";
 import RoomCreationOptions from "@/components/home/RoomCreationOptions";
+import { FaGithub } from "react-icons/fa";
 
 export default function Home() {
   const router = useRouter();
@@ -130,6 +131,18 @@ export default function Home() {
             <p className="mt-6 text-center text-gray-600 text-sm">
               Create a room and share the URL with friends to collaborate!
             </p>
+            <div className="mt-6 flex justify-center">
+              <a
+                href="https://github.com/krchx/weshare"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="items-center flex px-4 py-3 bg-gray-800 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors shadow-sm duration-200"
+                aria-label="View source on GitHub"
+              >
+                <FaGithub className="w-7 h-7 mr-2" />
+                <span className="inline">GitHub Repo</span>
+              </a>
+            </div>
           </div>
         </div>
 

@@ -235,7 +235,6 @@ export class WebRTCService {
   private shareRoomState(peerId: string): void {
     // Get the current text
     const text = this.getEditorText();
-    if (!text) return;
     // Get the current shared files and add local files
     const localFiles = Array.from(this.localFileStore.entries()).map(
       ([id, file]) => ({
@@ -248,6 +247,8 @@ export class WebRTCService {
     );
     const sharedFiles = this.getSharedFiles();
     const allFiles = [...localFiles, ...sharedFiles];
+    if (allFiles.length === 0 && !text) return;
+
     // Create the room state object
     const roomState = {
       text: text,

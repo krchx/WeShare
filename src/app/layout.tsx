@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://weshare.vercel.app"),
+  metadataBase: new URL("https://weshare-live.vercel.app"),
   title: "WeShare | Real-time File & code Sharing Platform",
   description:
     "Instantly share files and collaborate on code in real-time using peer-to-peer technology. No sign-up required, just create a room and share the link.",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://weshare.vercel.app/",
+    url: "https://weshare-live.vercel.app/",
     title: "WeShare | Secure Peer-to-Peer File & code Sharing",
     description:
       "Share files and collaborate on code instantly without uploading to servers. Private, secure, and no sign-up required.",
