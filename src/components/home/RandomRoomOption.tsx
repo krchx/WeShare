@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { FirebaseService } from "@/services/firebase";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { FiShuffle } from "react-icons/fi";
 
 interface RandomRoomOptionProps {
   onCreateRoom: (roomId: string) => void;
@@ -60,23 +62,13 @@ export default function RandomRoomOption({
           ${isCreating ? "opacity-50 cursor-not-allowed" : "opacity-100"}`}
       >
         {isCreating ? (
-          "Creating room..."
+          <>
+            <AiOutlineLoading3Quarters className="animate-spin mr-2 h-5 w-5" />
+            Creating room...
+          </>
         ) : (
           <>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 mr-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
+            <FiShuffle className="h-5 w-5 mr-2" />
             Create Random Room
           </>
         )}

@@ -1,5 +1,7 @@
 import React from "react";
 import { SharedFile } from "@/types/webrtc";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { FiDownload } from "react-icons/fi";
 
 type FileItem = File | SharedFile;
 
@@ -64,14 +66,16 @@ export const FileSharing: React.FC<FileSharingProps> = ({
                   <span>From {file.sender.substring(0, 6)}</span>
                 </div>
                 {downloadingFiles.has(file.id) ? (
-                  <div className="mt-1 text-xs text-gray-500">
+                  <div className="mt-1 text-xs text-blue-600 flex items-center">
+                    <AiOutlineLoading3Quarters className="mr-1 animate-spin" />
                     Downloading...
                   </div>
                 ) : (
                   <button
                     onClick={() => onDownloadFile(file)}
-                    className="mt-1 text-xs text-blue-600 hover:text-blue-800 hover:cursor-pointer"
+                    className="mt-1 text-xs text-blue-600 hover:text-blue-800 hover:cursor-pointer flex items-center"
                   >
+                    <FiDownload className="mr-1" />
                     Download
                   </button>
                 )}

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { FirebaseService } from "@/services/firebase";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { FiLogIn } from "react-icons/fi";
 
 interface JoinRoomFormProps {
   onJoinRoom: (roomId: string) => void;
@@ -48,14 +50,24 @@ export default function JoinRoomForm({ onJoinRoom }: JoinRoomFormProps) {
         <button
           type="submit"
           disabled={!roomId.trim() || isChecking}
-          className={`absolute right-2 top-2 px-4 py-1 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition-colors
+          className={`absolute right-2 top-2 px-4 py-1 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition-colors flex items-center
             ${
               !roomId.trim() || isChecking
                 ? "opacity-50 cursor-not-allowed"
                 : "opacity-100"
             }`}
         >
-          {isChecking ? "Checking..." : "Join"}
+          {isChecking ? (
+            <>
+              <AiOutlineLoading3Quarters className="animate-spin mr-1 h-4 w-4" />
+              Checking...
+            </>
+          ) : (
+            <>
+              <FiLogIn className="mr-1 h-4 w-4" />
+              Join
+            </>
+          )}
         </button>
       </div>
       {error && roomId.trim() && (
