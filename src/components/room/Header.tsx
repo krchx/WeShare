@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ShareRoomModal } from "./ShareRoomModal";
 import { FaGithub } from "react-icons/fa";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 interface HeaderProps {
   roomId: string;
@@ -44,7 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="ml-2 text-amber-600 text-xs md:text-sm flex items-center"
             aria-label="Connecting"
           >
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-600 mr-1.5 animate-pulse"></span>
+            <AiOutlineLoading3Quarters className="mr-1.5 animate-spin h-2.5 w-2.5" />
             Connecting...
           </span>
         ) : (
@@ -52,7 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="ml-2 text-yellow-500 text-xs md:text-sm flex items-center"
             aria-label="Loading Text"
           >
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-yellow-500 mr-1.5 animate-pulse"></span>
+            <AiOutlineLoading3Quarters className="mr-1.5 animate-spin h-2.5 w-2.5" />
             Loading Text...
           </span>
         )}

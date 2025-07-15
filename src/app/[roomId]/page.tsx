@@ -54,6 +54,7 @@ export default function Room() {
           text={text}
           onChange={handleTextChange}
           disabled={isTextLoading}
+          isLoading={isTextLoading}
         />
 
         <div className="flex flex-col md:w-80 border-2 border-gray-300 rounded-lg p-4 mx-4 my-2 md:my-4 bg-blue-300/30 backdrop-blur-sm">
