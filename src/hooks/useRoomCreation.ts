@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { FirebaseService } from "@/services/firebase";
+import { useError } from "@/context/ErrorContext";
+import { handleError } from "@/lib/utils";
+import { FirebaseError} from "@/lib/errors";
 
 export function useRoomCreation(onSuccess: (roomId: string) => void) {
   const [isChecking, setIsChecking] = useState(false);
@@ -7,6 +10,7 @@ export function useRoomCreation(onSuccess: (roomId: string) => void) {
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [roomId, setRoomId] = useState("");
   const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { showError } = useError();
 
   // Automatic availability check with debounce
   useEffect(() => {
@@ -45,9 +49,15 @@ export function useRoomCreation(onSuccess: (roomId: string) => void) {
       const exists = await FirebaseService.checkRoomExists(id);
       setIsAvailable(!exists);
       setError(exists ? "This room name is already taken" : "");
-    } catch (err) {
-      setError("Error checking availability");
-      console.error(err);
+    } catch (error) {
+      if (error instanceof FirebaseError) {
+        setError("Unable to check room availability. Please try again.");
+        showError("Connection error while checking room availability");
+      } else {
+        handleError(error, "Failed to check room availability");
+        setError("Error checking availability");
+      }
+      setIsAvailable(null);
     } finally {
       setIsChecking(false);
     }
@@ -79,9 +89,14 @@ export function useRoomCreation(onSuccess: (roomId: string) => void) {
         onSuccess(roomId);
       }, 500);
       return true;
-    } catch (err) {
-      setError("Error checking room availability");
-      console.error(err);
+    } catch (error) {
+      if (error instanceof FirebaseError) {
+        setError("Unable to create room. Please try again.");
+        showError("Connection error while creating room");
+      } else {
+        handleError(error, "Failed to create room");
+        setError("Error creating room");
+      }
       return false;
     } finally {
       setIsChecking(false);

@@ -4,6 +4,7 @@ import { FirebaseService } from "@/services/firebase";
 import { PeerMessage, SharedFile } from "@/types/webrtc";
 import { generateUserId } from "./idGenerator";
 import { v4 as uuidv4 } from "uuid";
+import { WebRTCError, FirebaseError, ERROR_CODES } from "@/lib/errors";
 
 // WebRTCService class definition
 export class WebRTCService {
@@ -69,30 +70,68 @@ export class WebRTCService {
    */
   private setupPeerEvents(): void {
     this.peer.on("open", () => {
-      this.joinRoom(); // Automatically join the room when the peer is ready
+      try {
+        this.joinRoom(); // Automatically join the room when the peer is ready
+      } catch {
+        throw new WebRTCError(
+          "Failed to join room after connection established",
+          ERROR_CODES.WEBRTC_CONNECTION_FAILED
+        );
+      }
     });
 
     this.peer.on("error", (err) => {
-      console.error("Peer error:", err); // Log any errors
+      // Handle different types of peer errors
+      if (err.type === "network") {
+        throw new WebRTCError(
+          "Network connection failed. Please check your internet connection.",
+          ERROR_CODES.WEBRTC_CONNECTION_FAILED
+        );
+      } else if (err.type === "peer-unavailable") {
+        throw new WebRTCError(
+          "Unable to connect to peer. They may have left the room.",
+          ERROR_CODES.WEBRTC_PEER_NOT_FOUND
+        );
+      } else {
+        throw new WebRTCError(
+          "WebRTC connection error occurred",
+          ERROR_CODES.WEBRTC_CONNECTION_FAILED
+        );
+      }
     });
   }
 
   /**
    * Join a room and discover other peers
    */
-  private joinRoom(): void {
-    // Register this peer in Firebase
-    FirebaseService.registerPeerInRoom(this.roomId, this.userId, {
-      peerId: this.peer.id,
-      joinedAt: Date.now(),
-    });
+  private async joinRoom(): Promise<void> {
+    try {
+      // Register this peer in Firebase
+      await FirebaseService.registerPeerInRoom(this.roomId, this.userId, {
+        peerId: this.peer.id,
+        joinedAt: Date.now(),
+      });
 
-    // // Listen for other peers joining the room
-    FirebaseService.onPeerJoined(this.roomId, (peerId) => {
-      if (peerId === this.peer.id) return; // Ignore self
-      // Avoid connecting to yourself
-      this.connectionManager.connectToPeer(peerId);
-    });
+      // Listen for other peers joining the room
+      FirebaseService.onPeerJoined(this.roomId, (peerId) => {
+        try {
+          if (peerId === this.peer.id) return; // Ignore self
+          // Avoid connecting to yourself
+          this.connectionManager.connectToPeer(peerId);
+        } catch (error) {
+          // Log locally but don't disrupt the peer joining process
+          console.error("Error connecting to peer:", error);
+        }
+      });
+    } catch (error) {
+      if (error instanceof FirebaseError) {
+        throw error;
+      }
+      throw new WebRTCError(
+        "Failed to join room. Please try again.",
+        ERROR_CODES.WEBRTC_CONNECTION_FAILED
+      );
+    }
   }
 
   /**
