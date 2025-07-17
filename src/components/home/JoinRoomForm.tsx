@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FirebaseService } from "@/services/firebase";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { FiLogIn } from "react-icons/fi";
+import { handleError } from "@/lib/utils";
 
 interface JoinRoomFormProps {
   onJoinRoom: (roomId: string) => void;
@@ -17,9 +18,10 @@ export default function JoinRoomForm({ onJoinRoom }: JoinRoomFormProps) {
     if (!roomId.trim()) return;
 
     setIsChecking(true);
+    setError("");
+
     try {
       const exists = await FirebaseService.checkRoomExists(roomId);
-      setIsChecking(false);
 
       if (!exists) {
         setError("This room doesn't exist");
@@ -28,9 +30,10 @@ export default function JoinRoomForm({ onJoinRoom }: JoinRoomFormProps) {
 
       onJoinRoom(roomId);
     } catch (err) {
-      setIsChecking(false);
+      handleError(err, "Failed to check if room exists");
       setError("Error checking room");
-      console.error(err);
+    } finally {
+      setIsChecking(false);
     }
   };
 

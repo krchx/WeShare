@@ -5,10 +5,16 @@ import RoomCreationOptions from "@/components/home/RoomCreationOptions";
 import { FaGithub } from "react-icons/fa";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
 
 export default function Home() {
   const router = useRouter();
   const { theme } = useTheme();
+  const [bgImg, setBgImg] = useState("");
+
+  useEffect(() => {
+    setBgImg(theme === "dark" ? "/home-bg-dark.svg" : "/home-bg-light.svg");
+  }, [theme]);
 
   const handleJoinRoom = (roomId: string) => {
     router.push(`/${roomId}`);
@@ -17,8 +23,6 @@ export default function Home() {
   const handleCreateRoom = (roomId: string) => {
     router.push(`/${roomId}`);
   };
-
-  const bgImg = theme === "dark" ? "/home-bg-dark.svg" : "/home-bg-light.svg";
 
   return (
     <main

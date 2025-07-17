@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { FirebaseService } from "@/services/firebase";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { FiShuffle } from "react-icons/fi";
+import { useError } from "@/context/ErrorContext";
+import { handleError } from "@/lib/utils";
 
 interface RandomRoomOptionProps {
   onCreateRoom: (roomId: string) => void;
@@ -13,12 +15,15 @@ export default function RandomRoomOption({
 }: RandomRoomOptionProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState("");
+  const { showError } = useError();
 
   const handleCreateRoom = async () => {
     let newRoomId;
     let isUnique = false;
 
     setIsCreating(true);
+    setError("");
+
     try {
       // Try to find a unique room ID
       while (!isUnique) {
@@ -27,16 +32,17 @@ export default function RandomRoomOption({
         isUnique = !exists;
       }
 
-      setIsCreating(false);
       if (newRoomId) {
         onCreateRoom(newRoomId);
       } else {
         setError("Failed to generate a valid room ID");
+        showError("Failed to generate a unique room ID");
       }
     } catch (err) {
-      setIsCreating(false);
+      handleError(err, "Failed to create random room");
       setError("Error creating room");
-      console.error(err);
+    } finally {
+      setIsCreating(false);
     }
   };
 

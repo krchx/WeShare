@@ -3,12 +3,15 @@ import { useParams } from "next/navigation";
 import { WebRTCService } from "@/utils/webrtc";
 import { SharedFile } from "@/types/webrtc";
 import { createMessageHandler } from "@/utils/webrtcMessageHandler";
+import { useError } from "@/context/ErrorContext";
+import { handleError } from "@/lib/utils";
 
 type FileItem = File | SharedFile;
 
 export function useRoom() {
   const params = useParams();
   const roomId = params.roomId as string;
+  const { showError, showSuccess } = useError();
 
   const [text, setText] = useState("");
   const [localFiles, setLocalFiles] = useState<FileItem[]>([]);
@@ -29,52 +32,55 @@ export function useRoom() {
   useEffect(() => {
     if (!roomId) return;
 
-    const webrtcService = new WebRTCService(
-      roomId,
-      getEditorText,
-      getSharedFiles
-    );
-    webrtcRef.current = webrtcService;
-    setUserId(webrtcService.getUserId());
+    try {
+      const webrtcService = new WebRTCService(
+        roomId,
+        getEditorText,
+        getSharedFiles
+      );
+      webrtcRef.current = webrtcService;
+      setUserId(webrtcService.getUserId());
 
-    // Check if we're the first peer or not
-    setTimeout(() => {
-      // If no content received after a timeout and there are no peers,
-      // assume we're the first user and enable the editor
-      if (isTextLoading && peers.length === 0) {
-        setIsTextLoading(false);
-      }
-    }, 2000); // 2 second timeout
+      // Create message handler with current state setters
+      const handleWebRTCMessage = createMessageHandler({
+        userId: webrtcService.getUserId(),
+        setText,
+        setIsTextLoading,
+        setSharedFiles,
+        setPeers,
+        isTextLoading,
+        isUpdatingTextRef,
+        setDownloadingFiles,
+      });
 
-    // Handle incoming messages
+      // Register the handler
+      const unsubscribe = webrtcService.onMessage(handleWebRTCMessage);
 
-    // Create message handler with current state setters
-    const handleWebRTCMessage = createMessageHandler({
-      userId: webrtcService.getUserId(),
-      setText,
-      setIsTextLoading,
-      setSharedFiles,
-      setPeers,
-      isTextLoading,
-      isUpdatingTextRef,
-      setDownloadingFiles,
-    });
+      const connectionStatusInterval = setInterval(() => {
+        if (webrtcService) {
+          setConnected(webrtcService.isConnected());
+        }
+      }, 1000);
 
-    // Register the handler
-    const unsubscribe = webrtcService.onMessage(handleWebRTCMessage);
+      // Check if we're the first peer or not
+      setTimeout(() => {
+        // If no content received after a timeout and there are no peers,
+        // assume we're the first user and enable the editor
+        if (isTextLoading && peers.length === 0) {
+          setIsTextLoading(false);
+        }
+      }, 2000); // 2 second timeout
 
-    const connectionStatusInterval = setInterval(() => {
-      if (webrtcService) {
-        setConnected(webrtcService.isConnected());
-      }
-    }, 1000);
-
-    // Clean up on unmount
-    return () => {
-      unsubscribe();
-      clearInterval(connectionStatusInterval);
-      webrtcService.disconnect();
-    };
+      // Clean up on unmount
+      return () => {
+        unsubscribe();
+        clearInterval(connectionStatusInterval);
+        webrtcService.disconnect();
+      };
+    } catch (error) {
+      handleError(error, "Failed to initialize room connection");
+      setIsTextLoading(false);
+    }
   }, [roomId]);
 
   useEffect(() => {
@@ -102,48 +108,86 @@ export function useRoom() {
 
   // Handle file uploads and share metadata via WebRTC
   const handleFileUpload = (files: FileList) => {
-    if (files.length > 0 && webrtcRef.current) {
-      const newFiles = Array.from(files);
-      const uploadedFiles: SharedFile[] = newFiles.map((file) => {
-        const fileId = webrtcRef.current!.shareFile(file);
+    try {
+      if (files.length > 0 && webrtcRef.current) {
+        const newFiles = Array.from(files);
 
-        return {
-          id: fileId,
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          sender: userId,
-          content: URL.createObjectURL(file), // Local content URL
-        };
-      });
+        // Check file size limits
+        const maxFileSize = 50 * 1024 * 1024; // 50MB
+        const oversizedFiles = newFiles.filter(
+          (file) => file.size > maxFileSize
+        );
 
-      setLocalFiles((prev) => [...prev, ...uploadedFiles]);
+        if (oversizedFiles.length > 0) {
+          showError(
+            `Files must be smaller than 50MB. ${oversizedFiles.length} file(s) were too large.`
+          );
+          return;
+        }
+
+        const uploadedFiles: SharedFile[] = newFiles.map((file) => {
+          const fileId = webrtcRef.current!.shareFile(file);
+
+          return {
+            id: fileId,
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            sender: userId,
+            content: URL.createObjectURL(file), // Local content URL
+          };
+        });
+
+        setLocalFiles((prev) => [...prev, ...uploadedFiles]);
+      }
+    } catch (error) {
+      handleError(error, "Failed to upload files. Please try again.");
     }
   };
 
   // Download a shared file by requesting it from the owner
   const downloadFile = (fileMetadata: SharedFile) => {
-    if (!webrtcRef.current) return;
+    try {
+      if (!webrtcRef.current) {
+        showError("Connection not available. Please try again.");
+        return;
+      }
 
-    // If we already have the content, create a download link
-    if (fileMetadata.content) {
-      const link = document.createElement("a");
-      link.href = fileMetadata.content as string;
-      link.download = fileMetadata.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      return;
+      // If we already have the content, create a download link
+      if (fileMetadata.content) {
+        const link = document.createElement("a");
+        link.href = fileMetadata.content as string;
+        link.download = fileMetadata.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
+
+      // Otherwise, request the file from the owner
+      setDownloadingFiles((prev) => new Set(prev).add(fileMetadata.id));
+      webrtcRef.current.requestFile(fileMetadata.id, fileMetadata.sender);
+    } catch (error) {
+      handleError(error, "Failed to download file. Please try again.");
+      setDownloadingFiles((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(fileMetadata.id);
+        return newSet;
+      });
     }
-
-    // Otherwise, request the file from the owner
-    setDownloadingFiles((prev) => new Set(prev).add(fileMetadata.id));
-    webrtcRef.current.requestFile(fileMetadata.id, fileMetadata.sender);
   };
 
   // Share room link by copying it to clipboard
-  const shareRoom = () => {
-    navigator.clipboard.writeText(window.location.href);
+  const shareRoom = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      showSuccess("Room link copied to clipboard!");
+    } catch (error) {
+      handleError(
+        error,
+        "Failed to copy room link. Please copy the URL manually."
+      );
+    }
   };
 
   return {

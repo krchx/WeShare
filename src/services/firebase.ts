@@ -10,6 +10,7 @@ import {
   onChildRemoved,
 } from "firebase/database";
 import { PeerData } from "@/types/webrtc";
+import { FirebaseError, ERROR_CODES } from "@/lib/errors";
 
 // Initialize Firebase - Add your config here
 const firebaseConfig = {
@@ -29,16 +30,23 @@ export class FirebaseService {
   /**
    * Register a user in a room
    */
-  static registerPeerInRoom(
+  static async registerPeerInRoom(
     roomId: string,
     userId: string,
     peerData: PeerData
-  ): void {
-    const peerRef = ref(database, `rooms/${roomId}/peers/${userId}`);
-    set(peerRef, peerData);
+  ): Promise<void> {
+    try {
+      const peerRef = ref(database, `rooms/${roomId}/peers/${userId}`);
+      await set(peerRef, peerData);
 
-    // Remove the peer data when disconnected
-    onDisconnect(peerRef).remove();
+      // Remove the peer data when disconnected
+      onDisconnect(peerRef).remove();
+    } catch {
+      throw new FirebaseError(
+        "Failed to register peer in room. Please try again.",
+        ERROR_CODES.FIREBASE_NETWORK_ERROR
+      );
+    }
   }
 
   /**
@@ -48,16 +56,36 @@ export class FirebaseService {
     roomId: string,
     callback: (peerId: string, userId: string) => void
   ): () => void {
-    const roomPeersRef = ref(database, `rooms/${roomId}/peers`);
+    try {
+      const roomPeersRef = ref(database, `rooms/${roomId}/peers`);
 
-    const unsubscribe = onChildAdded(roomPeersRef, (snapshot) => {
-      const peerData = snapshot.val() as PeerData;
-      const userId = snapshot.key as string;
-      callback(peerData.peerId, userId);
-    });
+      const unsubscribe = onChildAdded(roomPeersRef, (snapshot) => {
+        try {
+          const peerData = snapshot.val() as PeerData;
+          const userId = snapshot.key as string;
 
-    // Return an unsubscribe function
-    return () => unsubscribe();
+          if (!peerData || !userId) {
+            throw new FirebaseError(
+              "Invalid peer data received",
+              ERROR_CODES.FIREBASE_NETWORK_ERROR
+            );
+          }
+
+          callback(peerData.peerId, userId);
+        } catch (error) {
+          // Log locally but don't throw to avoid disrupting the listener
+          console.error("Error processing peer joined event:", error);
+        }
+      });
+
+      // Return an unsubscribe function
+      return () => unsubscribe();
+    } catch {
+      throw new FirebaseError(
+        "Failed to listen for peer connections. Please refresh and try again.",
+        ERROR_CODES.FIREBASE_NETWORK_ERROR
+      );
+    }
   }
 
   /**
@@ -67,20 +95,35 @@ export class FirebaseService {
     roomId: string,
     callback: (userId: string) => void
   ) {
-    const roomRef = ref(database, `rooms/${roomId}/users`);
+    try {
+      const roomRef = ref(database, `rooms/${roomId}/users`);
 
-    return onChildRemoved(roomRef, (snapshot) => {
-      const userId = snapshot.key;
-      if (userId) {
-        callback(userId);
-      }
-    });
+      return onChildRemoved(roomRef, (snapshot) => {
+        try {
+          const userId = snapshot.key;
+          if (userId) {
+            callback(userId);
+          }
+        } catch (error) {
+          // Log locally but don't throw to avoid disrupting the listener
+          console.error("Error processing disconnection event:", error);
+        }
+      });
+    } catch {
+      throw new FirebaseError(
+        "Failed to set up disconnection listener",
+        ERROR_CODES.FIREBASE_NETWORK_ERROR
+      );
+    }
   }
 
   /**
    * Properly disconnect a user when they leave
    */
-  static async disconnectUser(roomId: string, userId: string) {
+  static async disconnectUser(
+    roomId: string,
+    userId: string
+  ): Promise<boolean> {
     try {
       const userRef = ref(database, `rooms/${roomId}/users/${userId}`);
       await remove(userRef);
@@ -90,26 +133,45 @@ export class FirebaseService {
       await remove(messagesRef);
 
       return true;
-    } catch (error) {
-      console.error("Error disconnecting user:", error);
-      return false;
+    } catch {
+      throw new FirebaseError(
+        "Failed to disconnect user properly",
+        ERROR_CODES.FIREBASE_NETWORK_ERROR
+      );
     }
   }
 
   /**
    * Remove a peer from a room when they leave
    */
-  static removePeerFromRoom(roomId: string, userId: string): void {
-    const peerRef = ref(database, `rooms/${roomId}/peers/${userId}`);
-    remove(peerRef);
+  static async removePeerFromRoom(
+    roomId: string,
+    userId: string
+  ): Promise<void> {
+    try {
+      const peerRef = ref(database, `rooms/${roomId}/peers/${userId}`);
+      await remove(peerRef);
+    } catch {
+      throw new FirebaseError(
+        "Failed to remove peer from room",
+        ERROR_CODES.FIREBASE_NETWORK_ERROR
+      );
+    }
   }
 
   /**
    * Check if a room exists
    */
   static async checkRoomExists(roomId: string): Promise<boolean> {
-    const roomRef = ref(database, `rooms/${roomId}`);
-    const snapshot = await get(roomRef);
-    return snapshot.exists();
+    try {
+      const roomRef = ref(database, `rooms/${roomId}`);
+      const snapshot = await get(roomRef);
+      return snapshot.exists();
+    } catch {
+      throw new FirebaseError(
+        "Failed to check if room exists. Please try again.",
+        ERROR_CODES.FIREBASE_NETWORK_ERROR
+      );
+    }
   }
 }
