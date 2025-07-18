@@ -8,8 +8,9 @@ import {
   remove,
   get,
   onChildRemoved,
+  onValue,
 } from "firebase/database";
-import { PeerData } from "@/types/webrtc";
+import { PeerData, RoomLeaderData } from "@/types/webrtc";
 import { FirebaseError, ERROR_CODES } from "@/lib/errors";
 
 // Initialize Firebase - Add your config here
@@ -170,6 +171,128 @@ export class FirebaseService {
     } catch {
       throw new FirebaseError(
         "Failed to check if room exists. Please try again.",
+        ERROR_CODES.FIREBASE_NETWORK_ERROR
+      );
+    }
+  }
+
+  /**
+   * Set the room leader
+   */
+  static async setRoomLeader(
+    roomId: string,
+    leaderData: RoomLeaderData
+  ): Promise<void> {
+    try {
+      const leaderRef = ref(database, `rooms/${roomId}/leader`);
+      await set(leaderRef, leaderData);
+
+      // Remove the leader data when disconnected
+      onDisconnect(leaderRef).remove();
+    } catch {
+      throw new FirebaseError(
+        "Failed to set room leader. Please try again.",
+        ERROR_CODES.FIREBASE_NETWORK_ERROR
+      );
+    }
+  }
+
+  /**
+   * Get the current room leader
+   */
+  static async getRoomLeader(roomId: string): Promise<RoomLeaderData | null> {
+    try {
+      const leaderRef = ref(database, `rooms/${roomId}/leader`);
+      const snapshot = await get(leaderRef);
+
+      if (snapshot.exists()) {
+        return snapshot.val() as RoomLeaderData;
+      }
+
+      return null;
+    } catch {
+      throw new FirebaseError(
+        "Failed to get room leader. Please try again.",
+        ERROR_CODES.FIREBASE_NETWORK_ERROR
+      );
+    }
+  }
+
+  /**
+   * Listen for leader changes in the room
+   */
+  static onLeaderChanged(
+    roomId: string,
+    callback: (leader: RoomLeaderData | null) => void
+  ): () => void {
+    try {
+      const leaderRef = ref(database, `rooms/${roomId}/leader`);
+
+      const unsubscribe = onValue(leaderRef, (snapshot) => {
+        try {
+          if (snapshot.exists()) {
+            const leaderData = snapshot.val() as RoomLeaderData;
+            callback(leaderData);
+          } else {
+            callback(null);
+          }
+        } catch (error) {
+          // Log locally but don't throw to avoid disrupting the listener
+          console.error("Error processing leader change event:", error);
+        }
+      });
+
+      return () => unsubscribe();
+    } catch {
+      throw new FirebaseError(
+        "Failed to listen for leader changes. Please refresh and try again.",
+        ERROR_CODES.FIREBASE_NETWORK_ERROR
+      );
+    }
+  }
+
+  /**
+   * Remove the room leader
+   */
+  static async removeRoomLeader(roomId: string): Promise<void> {
+    try {
+      const leaderRef = ref(database, `rooms/${roomId}/leader`);
+      await remove(leaderRef);
+    } catch {
+      throw new FirebaseError(
+        "Failed to remove room leader",
+        ERROR_CODES.FIREBASE_NETWORK_ERROR
+      );
+    }
+  }
+
+  /**
+   * Get all peers in a room (for leader election)
+   */
+  static async getAllPeersInRoom(
+    roomId: string
+  ): Promise<{ userId: string; peerData: PeerData }[]> {
+    try {
+      const peersRef = ref(database, `rooms/${roomId}/peers`);
+      const snapshot = await get(peersRef);
+
+      if (!snapshot.exists()) {
+        return [];
+      }
+
+      const peers: { userId: string; peerData: PeerData }[] = [];
+      snapshot.forEach((childSnapshot) => {
+        const userId = childSnapshot.key as string;
+        const peerData = childSnapshot.val() as PeerData;
+        if (userId && peerData) {
+          peers.push({ userId, peerData });
+        }
+      });
+
+      return peers;
+    } catch {
+      throw new FirebaseError(
+        "Failed to get peers for leader election",
         ERROR_CODES.FIREBASE_NETWORK_ERROR
       );
     }

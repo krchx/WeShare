@@ -76,7 +76,7 @@ export function useWebRTCConnection({
         clearInterval(connectionStatusInterval);
         webrtcService.disconnect();
       };
-    } catch (error) {
+    } catch {
       setIsTextLoading(false);
     }
   }, [roomId]);

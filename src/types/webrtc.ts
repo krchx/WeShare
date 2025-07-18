@@ -5,7 +5,10 @@ export type MessageType =
   | "file-response"
   | "file-share"
   | "user-joined"
-  | "room-state-request";
+  | "room-state-request"
+  | "leader-election"
+  | "leader-announcement"
+  | "leader-handover";
 
 export type PeerMessage =
   | { sender: string; type: "text-update"; data: string }
@@ -16,6 +19,9 @@ export type PeerMessage =
   | { sender: string; type: "user-joined"; data: { userId: string } }
   | { sender: string; type: "room-state-request"; data: string }
   | { sender: string; type: "room-state-response"; data: RoomStateData }
+  | { sender: string; type: "leader-election"; data: LeaderElectionData }
+  | { sender: string; type: "leader-announcement"; data: RoomLeaderData }
+  | { sender: string; type: "leader-handover"; data: RoomLeaderData }
   | { sender: string; type: "others"; data?: never };
 
 export interface RoomStateData {
@@ -25,6 +31,18 @@ export interface RoomStateData {
 
 export interface PeerData {
   peerId: string;
+  joinedAt: number;
+  isLeader?: boolean;
+}
+
+export interface RoomLeaderData {
+  userId: string;
+  peerId: string;
+  joinedAt: number;
+}
+
+export interface LeaderElectionData {
+  candidateId: string;
   joinedAt: number;
 }
 

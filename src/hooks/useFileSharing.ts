@@ -1,13 +1,16 @@
 import { useCallback } from "react";
 import { SharedFile } from "@/types/webrtc";
 import { handleError } from "@/lib/utils";
+import { WebRTCService } from "@/utils/webrtc";
+
+type FileItem = File | SharedFile;
 
 type UseFileSharingProps = {
-  webrtcRef: React.MutableRefObject<any>;
+  webrtcRef: React.MutableRefObject<WebRTCService | null>;
   userId: string;
   showError: (msg: string) => void;
   showSuccess: (msg: string) => void;
-  setLocalFiles: React.Dispatch<React.SetStateAction<any[]>>;
+  setLocalFiles: React.Dispatch<React.SetStateAction<FileItem[]>>;
   setDownloadingFiles: React.Dispatch<React.SetStateAction<Set<string>>>;
 };
 
@@ -15,7 +18,6 @@ export function useFileSharing({
   webrtcRef,
   userId,
   showError,
-  showSuccess,
   setLocalFiles,
   setDownloadingFiles,
 }: UseFileSharingProps) {
@@ -46,7 +48,7 @@ export function useFileSharing({
               content: URL.createObjectURL(file),
             };
           });
-          setLocalFiles((prev: any) => [...prev, ...uploadedFiles]);
+          setLocalFiles((prev: FileItem[]) => [...prev, ...uploadedFiles]);
         }
       } catch (error) {
         handleError(error, "Failed to upload files. Please try again.");
