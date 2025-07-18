@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
-import { WebRTCService } from "@/utils/webrtc";
 import { SharedFile } from "@/types/webrtc";
-import { createMessageHandler } from "@/utils/webrtcMessageHandler";
 import { useError } from "@/context/ErrorContext";
-import { handleError } from "@/lib/utils";
+import { useWebRTCConnection } from "./useWebRTCConnection";
+import { useFileSharing } from "./useFileSharing";
+import { useRoomText } from "./useRoomText";
+import { useRoomConnectionStatus } from "./useRoomConnectionStatus";
+import { useShareRoom } from "./useShareRoom";
 
 type FileItem = File | SharedFile;
 
@@ -25,170 +27,63 @@ export function useRoom() {
   );
   const textRef = useRef("");
   const sharedFilesRef = useRef<SharedFile[]>([]);
-  const webrtcRef = useRef<WebRTCService | null>(null);
   const isUpdatingTextRef = useRef(false);
 
-  // Set up WebRTC service and message handling
-  useEffect(() => {
-    if (!roomId) return;
+  // Get initial text from the editor
+  const getEditorText = () => textRef.current;
 
-    try {
-      const webrtcService = new WebRTCService(
-        roomId,
-        getEditorText,
-        getSharedFiles
-      );
-      webrtcRef.current = webrtcService;
-      setUserId(webrtcService.getUserId());
+  // Get initial file metadata
+  const getSharedFiles = () => sharedFilesRef.current;
 
-      // Create message handler with current state setters
-      const handleWebRTCMessage = createMessageHandler({
-        userId: webrtcService.getUserId(),
-        setText,
-        setIsTextLoading,
-        setSharedFiles,
-        setPeers,
-        isTextLoading,
-        isUpdatingTextRef,
-        setDownloadingFiles,
-      });
+  // Use the WebRTC connection hook
+  const webrtcRef = useWebRTCConnection({
+    roomId,
+    getEditorText,
+    getSharedFiles,
+    setText,
+    setIsTextLoading,
+    setSharedFiles,
+    setPeers,
+    isTextLoading,
+    isUpdatingTextRef,
+    setDownloadingFiles,
+    setUserId,
+    setConnected,
+    peers,
+  });
 
-      // Register the handler
-      const unsubscribe = webrtcService.onMessage(handleWebRTCMessage);
+  // Use the room connection status hook
+  useRoomConnectionStatus({
+    webrtcRef,
+    setConnected,
+    peers,
+    setIsTextLoading,
+  });
 
-      const connectionStatusInterval = setInterval(() => {
-        if (webrtcService) {
-          setConnected(webrtcService.isConnected());
-        }
-      }, 1000);
+  // Use the room text hook
+  const { updateText } = useRoomText({
+    webrtcRef,
+    isUpdatingTextRef,
+    setText,
+  });
 
-      // Check if we're the first peer or not
-      setTimeout(() => {
-        // If no content received after a timeout and there are no peers,
-        // assume we're the first user and enable the editor
-        if (isTextLoading && peers.length === 0) {
-          setIsTextLoading(false);
-        }
-      }, 2000); // 2 second timeout
+  // Use the file sharing hook
+  const { handleFileUpload, downloadFile } = useFileSharing({
+    webrtcRef,
+    userId,
+    showError,
+    showSuccess,
+    setLocalFiles,
+    setDownloadingFiles,
+  });
 
-      // Clean up on unmount
-      return () => {
-        unsubscribe();
-        clearInterval(connectionStatusInterval);
-        webrtcService.disconnect();
-      };
-    } catch (error) {
-      handleError(error, "Failed to initialize room connection");
-      setIsTextLoading(false);
-    }
-  }, [roomId]);
+  // Use the share room hook
+  const { shareRoom } = useShareRoom({ showSuccess, showError });
 
   useEffect(() => {
     textRef.current = text;
     sharedFilesRef.current = sharedFiles;
   }, [text, sharedFiles]);
-
-  // Get initial text from the editor
-  const getEditorText = () => {
-    return textRef.current;
-  };
-
-  // Get initial file metadata
-  const getSharedFiles = () => {
-    return sharedFilesRef.current;
-  };
-
-  // Update text and broadcast changes
-  const updateText = (newText: string) => {
-    setText(newText);
-    if (!isUpdatingTextRef.current && webrtcRef.current) {
-      webrtcRef.current.updateText(newText);
-    }
-  };
-
-  // Handle file uploads and share metadata via WebRTC
-  const handleFileUpload = (files: FileList) => {
-    try {
-      if (files.length > 0 && webrtcRef.current) {
-        const newFiles = Array.from(files);
-
-        // Check file size limits
-        const maxFileSize = 50 * 1024 * 1024; // 50MB
-        const oversizedFiles = newFiles.filter(
-          (file) => file.size > maxFileSize
-        );
-
-        if (oversizedFiles.length > 0) {
-          showError(
-            `Files must be smaller than 50MB. ${oversizedFiles.length} file(s) were too large.`
-          );
-          return;
-        }
-
-        const uploadedFiles: SharedFile[] = newFiles.map((file) => {
-          const fileId = webrtcRef.current!.shareFile(file);
-
-          return {
-            id: fileId,
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            sender: userId,
-            content: URL.createObjectURL(file), // Local content URL
-          };
-        });
-
-        setLocalFiles((prev) => [...prev, ...uploadedFiles]);
-      }
-    } catch (error) {
-      handleError(error, "Failed to upload files. Please try again.");
-    }
-  };
-
-  // Download a shared file by requesting it from the owner
-  const downloadFile = (fileMetadata: SharedFile) => {
-    try {
-      if (!webrtcRef.current) {
-        showError("Connection not available. Please try again.");
-        return;
-      }
-
-      // If we already have the content, create a download link
-      if (fileMetadata.content) {
-        const link = document.createElement("a");
-        link.href = fileMetadata.content as string;
-        link.download = fileMetadata.name;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        return;
-      }
-
-      // Otherwise, request the file from the owner
-      setDownloadingFiles((prev) => new Set(prev).add(fileMetadata.id));
-      webrtcRef.current.requestFile(fileMetadata.id, fileMetadata.sender);
-    } catch (error) {
-      handleError(error, "Failed to download file. Please try again.");
-      setDownloadingFiles((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(fileMetadata.id);
-        return newSet;
-      });
-    }
-  };
-
-  // Share room link by copying it to clipboard
-  const shareRoom = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      showSuccess("Room link copied to clipboard!");
-    } catch (error) {
-      handleError(
-        error,
-        "Failed to copy room link. Please copy the URL manually."
-      );
-    }
-  };
 
   return {
     roomId,

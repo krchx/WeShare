@@ -1,11 +1,13 @@
 import Peer, { DataConnection } from "peerjs";
-import { PeerMessage } from "@/types/webrtc";
+import { PeerMessage, RoomLeaderData } from "@/types/webrtc";
 
 export class PeerConnectionManager {
   private connections: Record<string, DataConnection> = {};
   private messageHandlers: ((message: PeerMessage) => void)[] = [];
   private peer: Peer;
   private userId: string;
+  private currentLeader: RoomLeaderData | null = null;
+  private priorityConnections: Set<string> = new Set(); // Track leader connections
 
   constructor(peer: Peer, userId: string) {
     this.peer = peer;
@@ -20,7 +22,11 @@ export class PeerConnectionManager {
    */
   private handleIncomingConnection(conn: DataConnection): void {
     this.setupConnection(conn);
-    this.RoomStateRequest(conn);
+
+    // Only request room state from leader or if no leader is known
+    if (!this.currentLeader || this.isLeaderConnection(conn)) {
+      this.requestRoomState(conn);
+    }
   }
 
   /**
@@ -33,6 +39,47 @@ export class PeerConnectionManager {
     // console.log("Connecting to peer:", peerId);
     const conn = this.peer.connect(peerId);
     this.setupConnection(conn);
+  }
+
+  /**
+   * Connect to the leader with priority
+   */
+  public connectToLeader(leaderPeerId: string): void {
+    if (this.connections[leaderPeerId]) return;
+
+    this.priorityConnections.add(leaderPeerId);
+    const conn = this.peer.connect(leaderPeerId);
+    this.setupConnection(conn);
+
+    // Request room state from leader immediately
+    conn.on("open", () => {
+      this.requestRoomState(conn);
+    });
+  }
+
+  /**
+   * Update current leader information
+   */
+  public setCurrentLeader(leader: RoomLeaderData | null): void {
+    this.currentLeader = leader;
+  }
+
+  /**
+   * Extract room ID from peer ID (format: roomId-userId)
+   */
+  private extractRoomId(peerId: string): string {
+    const lastDashIndex = peerId.lastIndexOf("-");
+    return lastDashIndex > 0 ? peerId.substring(0, lastDashIndex) : peerId;
+  }
+
+  /**
+   * Check if a connection is to the current leader
+   */
+  private isLeaderConnection(conn: DataConnection): boolean {
+    if (!this.currentLeader) return false;
+    const roomId = this.extractRoomId(this.peer.id);
+    const expectedLeaderPeerId = `${roomId}-${this.currentLeader.userId}`;
+    return conn.peer === expectedLeaderPeerId;
   }
 
   /**
@@ -60,11 +107,13 @@ export class PeerConnectionManager {
 
     conn.on("close", () => {
       console.log("Connection closed:", conn.peer);
+      this.priorityConnections.delete(conn.peer);
       delete this.connections[conn.peer];
     });
 
     conn.on("error", (err) => {
       console.error("Connection error:", err);
+      this.priorityConnections.delete(conn.peer);
       delete this.connections[conn.peer];
     });
   }
@@ -72,16 +121,21 @@ export class PeerConnectionManager {
   /**
    * Ask the connected peer for room information
    */
-  private RoomStateRequest(conn: DataConnection): void {
+  private requestRoomState(conn: DataConnection): void {
+    console.log("Requesting room state from peer:", conn.peer);
     const message: PeerMessage = {
       type: "room-state-request",
       data: "",
       sender: this.userId,
     };
 
-    conn.on("open", () => {
+    if (conn.open) {
       conn.send(message);
-    });
+    } else {
+      conn.on("open", () => {
+        conn.send(message);
+      });
+    }
   }
 
   /**
@@ -148,5 +202,57 @@ export class PeerConnectionManager {
    */
   public getConnectionCount(): number {
     return Object.keys(this.connections).length;
+  }
+
+  /**
+   * Check if connected to the current leader
+   */
+  public isConnectedToLeader(): boolean {
+    if (!this.currentLeader) return false;
+
+    const roomId = this.extractRoomId(this.peer.id);
+    const leaderPeerId = `${roomId}-${this.currentLeader.userId}`;
+    return !!this.connections[leaderPeerId];
+  }
+
+  /**
+   * Get leader connection if available
+   */
+  public getLeaderConnection(): DataConnection | null {
+    if (!this.currentLeader) return null;
+
+    const roomId = this.extractRoomId(this.peer.id);
+    const leaderPeerId = `${roomId}-${this.currentLeader.userId}`;
+    return this.connections[leaderPeerId] || null;
+  }
+
+  /**
+   * Send message specifically to leader
+   */
+  public sendToLeader(message: PeerMessage): boolean {
+    const leaderConn = this.getLeaderConnection();
+    if (leaderConn && leaderConn.open) {
+      leaderConn.send(message);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Broadcast with leader priority (send to leader first)
+   */
+  public broadcastWithLeaderPriority(message: PeerMessage): void {
+    // Send to leader first if connected
+    const leaderConn = this.getLeaderConnection();
+    if (leaderConn && leaderConn.open) {
+      leaderConn.send(message);
+    }
+
+    // Then send to all other peers
+    Object.values(this.connections).forEach((conn) => {
+      if (conn.open && conn !== leaderConn) {
+        conn.send(message);
+      }
+    });
   }
 }

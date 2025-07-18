@@ -49,10 +49,40 @@ export function createMessageHandler(config: MessageHandlerConfig) {
       case "room-state-response":
         handleRoomStateResponseMessage(message);
         break;
+      case "leader-announcement":
+        handleLeaderAnnouncementMessage(message);
+        break;
+      case "leader-election":
+        handleLeaderElectionMessage(message);
+        break;
+      case "leader-handover":
+        handleLeaderHandoverMessage(message);
+        break;
       default:
         console.warn("Unknown message type:", message.type);
     }
   };
+
+  function handleLeaderAnnouncementMessage(
+    message: Extract<PeerMessage, { type: "leader-announcement" }>
+  ) {
+    if (message.sender === userId) return;
+    console.log("Leader announced:", message.data.userId);
+  }
+
+  function handleLeaderElectionMessage(
+    message: Extract<PeerMessage, { type: "leader-election" }>
+  ) {
+    if (message.sender === userId) return;
+    console.log("Leader election message from:", message.sender);
+  }
+
+  function handleLeaderHandoverMessage(
+    message: Extract<PeerMessage, { type: "leader-handover" }>
+  ) {
+    if (message.sender === userId) return;
+    console.log("Leader handover to:", message.data.userId);
+  }
 
   function handleTextUpdateMessage(
     message: Extract<PeerMessage, { type: "text-update" }>
@@ -111,7 +141,6 @@ export function createMessageHandler(config: MessageHandlerConfig) {
       return prev;
     });
   }
-
   function handleRoomStateResponseMessage(
     message: Extract<PeerMessage, { type: "room-state-response" }>
   ) {
