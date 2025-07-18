@@ -2,6 +2,7 @@ import Peer from "peerjs";
 import { PeerConnectionManager } from "@/services/peer-connection";
 import { FirebaseService } from "@/services/firebase";
 import { PeerMessage, SharedFile, RoomLeaderData } from "@/types/webrtc";
+import { LeaderElectionManager } from "./leader-election";
 import { generateUserId } from "./idGenerator";
 import { v4 as uuidv4 } from "uuid";
 import { WebRTCError, FirebaseError, ERROR_CODES } from "@/lib/errors";
@@ -20,9 +21,7 @@ export class WebRTCService {
   private joinedAt: number;
 
   // Leader election properties
-  private isLeader: boolean = false;
-  private currentLeader: RoomLeaderData | null = null;
-  private leaderElectionInProgress: boolean = false;
+  private leaderElectionManager: LeaderElectionManager;
 
   /**
    * Constructor: Initializes the WebRTC service for a specific room
@@ -68,6 +67,16 @@ export class WebRTCService {
     // Register message handler
     this.connectionManager.onMessage(this.handleMessage.bind(this));
 
+    // Set up leader election manager
+    this.leaderElectionManager = new LeaderElectionManager({
+      userId: this.userId,
+      peerId: this.peer.id,
+      roomId: this.roomId,
+      joinedAt: this.joinedAt,
+      connectionManager: this.connectionManager,
+      announceLeadership: this.announceLeadership.bind(this),
+    });
+
     // Set up peer event handlers
     this.setupPeerEvents();
   }
@@ -77,6 +86,8 @@ export class WebRTCService {
    */
   private setupPeerEvents(): void {
     this.peer.on("open", () => {
+      // Set peerId in leaderElectionManager
+      this.leaderElectionManager.peerId = this.peer.id;
       try {
         this.joinRoom(); // Automatically join the room when the peer is ready
       } catch {
@@ -113,23 +124,29 @@ export class WebRTCService {
    */
   private async joinRoom(): Promise<void> {
     try {
-      // Register this peer in Firebase with leader info
-      await FirebaseService.registerPeerInRoom(this.roomId, this.userId, {
+      const peerData = {
         peerId: this.peer.id,
         joinedAt: this.joinedAt,
-        isLeader: false, // Will be updated if becomes leader
-      });
+        isLeader: false,
+      };
+
+      // Register this peer in Firebase with leader info
+      await FirebaseService.registerPeerInRoom(
+        this.roomId,
+        this.userId,
+        peerData
+      );
 
       // Check if room has a leader
       const existingLeader = await FirebaseService.getRoomLeader(this.roomId);
 
       if (!existingLeader) {
         // No leader exists, start election
-        await this.handleLeaderElection();
+        await this.leaderElectionManager.handleLeaderElection();
       } else {
         // Leader exists, set as follower
-        this.currentLeader = existingLeader;
-        this.isLeader = false;
+        this.leaderElectionManager.currentLeader = existingLeader;
+        this.leaderElectionManager.isLeader = false;
 
         // Update connection manager with leader info
         this.connectionManager.setCurrentLeader(existingLeader);
@@ -143,8 +160,8 @@ export class WebRTCService {
       // Listen for leader changes
       FirebaseService.onLeaderChanged(this.roomId, (leader) => {
         if (leader && leader.userId !== this.userId) {
-          this.currentLeader = leader;
-          this.isLeader = false;
+          this.leaderElectionManager.currentLeader = leader;
+          this.leaderElectionManager.isLeader = false;
 
           // Update connection manager with new leader info
           this.connectionManager.setCurrentLeader(leader);
@@ -156,7 +173,7 @@ export class WebRTCService {
         } else if (!leader) {
           // Leader disconnected
           this.connectionManager.setCurrentLeader(null);
-          this.handleLeaderDisconnect();
+          this.leaderElectionManager.handleLeaderDisconnect();
         }
       });
 
@@ -166,7 +183,10 @@ export class WebRTCService {
           if (peerId === this.peer.id) return; // Ignore self
 
           // If this is the leader joining and we're not the leader, prioritize connection
-          if (this.currentLeader && userId === this.currentLeader.userId) {
+          if (
+            this.leaderElectionManager.getCurrentLeader() &&
+            userId === this.leaderElectionManager.getCurrentLeader()?.userId
+          ) {
             this.connectionManager.connectToLeader(peerId);
           } else {
             // Regular peer connection
@@ -201,7 +221,7 @@ export class WebRTCService {
 
     if (message.type === "room-state-request") {
       // Only leader should respond to room state requests
-      if (this.isLeader) {
+      if (this.leaderElectionManager.getIsLeader()) {
         this.shareRoomState(message.sender);
       }
       return;
@@ -209,7 +229,7 @@ export class WebRTCService {
 
     // Leader relays certain messages from followers to all peers
     if (
-      this.isLeader &&
+      this.leaderElectionManager.getIsLeader() &&
       (message.type === "text-update" || message.type === "file-metadata")
     ) {
       // Relay the message to all other peers (except sender)
@@ -218,8 +238,8 @@ export class WebRTCService {
 
     if (message.type === "leader-announcement") {
       // Update current leader information
-      this.currentLeader = message.data;
-      this.isLeader = false;
+      this.leaderElectionManager.currentLeader = message.data;
+      this.leaderElectionManager.isLeader = false;
       this.connectionManager.setCurrentLeader(message.data);
       console.log("New leader announced:", message.data.userId);
       return;
@@ -227,14 +247,14 @@ export class WebRTCService {
 
     if (message.type === "leader-election") {
       // Handle leader election messages
-      this.handleLeaderElectionMessage(message);
+      this.leaderElectionManager.handleLeaderElectionMessage(message);
       return;
     }
 
     if (message.type === "leader-handover") {
       // Handle leader handover
-      this.currentLeader = message.data;
-      this.isLeader = false;
+      this.leaderElectionManager.currentLeader = message.data;
+      this.leaderElectionManager.isLeader = false;
       this.connectionManager.setCurrentLeader(message.data);
       console.log("Leader handover to:", message.data.userId);
       return;
@@ -242,29 +262,6 @@ export class WebRTCService {
 
     // Forward the message to all registered listeners
     this.messageListeners.forEach((listener) => listener(message));
-  }
-
-  /**
-   * Handle leader election message
-   */
-  private handleLeaderElectionMessage(
-    message: Extract<PeerMessage, { type: "leader-election" }>
-  ): void {
-    // Compare timestamps to determine leader
-    if (message.data.joinedAt < this.joinedAt) {
-      // Other peer joined earlier, they should be leader
-      this.isLeader = false;
-    } else if (message.data.joinedAt > this.joinedAt) {
-      // This peer joined earlier, should be leader
-      if (!this.isLeader && !this.leaderElectionInProgress) {
-        this.handleLeaderElection();
-      }
-    }
-    // If timestamps are equal, use userId as tiebreaker
-    else if (message.data.candidateId > this.userId) {
-      // Other peer has higher userId, they become leader
-      this.isLeader = false;
-    }
   }
 
   /**
@@ -300,7 +297,7 @@ export class WebRTCService {
       sender: this.userId,
     };
 
-    if (this.isLeader) {
+    if (this.leaderElectionManager.getIsLeader()) {
       // Leader broadcasts to all peers
       this.connectionManager.broadcast(message);
     } else {
@@ -337,7 +334,7 @@ export class WebRTCService {
       sender: this.userId,
     };
 
-    if (this.isLeader) {
+    if (this.leaderElectionManager.getIsLeader()) {
       // Leader broadcasts to all peers
       this.connectionManager.broadcast(message);
     } else {
@@ -442,8 +439,8 @@ export class WebRTCService {
    */
   public disconnect(): void {
     // If this peer is the leader, step down
-    if (this.isLeader) {
-      this.stepDownAsLeader();
+    if (this.leaderElectionManager.getIsLeader()) {
+      this.leaderElectionManager.stepDownAsLeader();
     }
 
     // Remove this peer from Firebase
@@ -486,7 +483,7 @@ export class WebRTCService {
    * @returns True if this peer is the leader
    */
   public getIsLeader(): boolean {
-    return this.isLeader;
+    return this.leaderElectionManager.getIsLeader();
   }
 
   /**
@@ -494,99 +491,11 @@ export class WebRTCService {
    * @returns The current leader data or null
    */
   public getCurrentLeader(): RoomLeaderData | null {
-    return this.currentLeader;
+    return this.leaderElectionManager.getCurrentLeader();
   }
 
   /**
    * Attempt to become the room leader
-   */
-  private async becomeLeader(): Promise<void> {
-    try {
-      const leaderData: RoomLeaderData = {
-        userId: this.userId,
-        peerId: this.peer.id,
-        joinedAt: this.joinedAt,
-      };
-
-      await FirebaseService.setRoomLeader(this.roomId, leaderData);
-      this.isLeader = true;
-      this.currentLeader = leaderData;
-
-      // Update connection manager with leader info
-      this.connectionManager.setCurrentLeader(leaderData);
-
-      // Announce leadership to all connected peers
-      this.announceLeadership(leaderData);
-
-      console.log("Became room leader:", this.userId);
-    } catch (error) {
-      console.error("Failed to become leader:", error);
-      this.isLeader = false;
-    }
-  }
-
-  /**
-   * Step down from leadership
-   */
-  private async stepDownAsLeader(): Promise<void> {
-    if (!this.isLeader) return;
-
-    try {
-      await FirebaseService.removeRoomLeader(this.roomId);
-      this.isLeader = false;
-      this.currentLeader = null;
-
-      // Update connection manager
-      this.connectionManager.setCurrentLeader(null);
-
-      console.log("Stepped down as leader:", this.userId);
-    } catch (error) {
-      console.error("Failed to step down as leader:", error);
-    }
-  }
-
-  /**
-   * Handle leader election process
-   */
-  private async handleLeaderElection(): Promise<void> {
-    if (this.leaderElectionInProgress) return;
-
-    this.leaderElectionInProgress = true;
-
-    try {
-      // Get all current peers
-      const peers = await FirebaseService.getAllPeersInRoom(this.roomId);
-
-      if (peers.length === 0) {
-        // No peers found, become leader
-        await this.becomeLeader();
-        return;
-      }
-
-      // Find the peer with the earliest joinedAt timestamp
-      const earliestPeer = peers.reduce((earliest, current) => {
-        return current.peerData.joinedAt < earliest.peerData.joinedAt
-          ? current
-          : earliest;
-      });
-
-      // If this peer has the earliest timestamp, become leader
-      if (earliestPeer.userId === this.userId) {
-        await this.becomeLeader();
-      } else {
-        // Someone else should be leader
-        this.isLeader = false;
-        console.log("Another peer is the leader:", earliestPeer.userId);
-      }
-    } catch (error) {
-      console.error("Error during leader election:", error);
-    } finally {
-      this.leaderElectionInProgress = false;
-    }
-  }
-
-  /**
-   * Announce leadership to all peers
    */
   private announceLeadership(leaderData: RoomLeaderData): void {
     const message: PeerMessage = {
@@ -594,24 +503,6 @@ export class WebRTCService {
       data: leaderData,
       sender: this.userId,
     };
-
     this.connectionManager.broadcast(message);
-  }
-
-  /**
-   * Handle when the current leader disconnects
-   */
-  private async handleLeaderDisconnect(): Promise<void> {
-    console.log("Leader disconnected, starting election...");
-    this.currentLeader = null;
-
-    // Wait a bit to allow for reconnection
-    setTimeout(async () => {
-      const currentLeader = await FirebaseService.getRoomLeader(this.roomId);
-      if (!currentLeader) {
-        // No leader exists, start election
-        await this.handleLeaderElection();
-      }
-    }, 1000);
   }
 }
