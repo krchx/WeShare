@@ -380,12 +380,8 @@ export class WebRTCService {
       const message: PeerMessage = {
         type: "file-response",
         data: {
-          id: fileId,
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          content: e.target.result,
-          sender: this.userId,
+          fileId: fileId,
+          fileData: e.target.result as ArrayBuffer
         },
         sender: this.userId,
       };
