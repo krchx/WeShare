@@ -21,7 +21,6 @@ export interface RoomEventHandler {
   onFileReceived(fileId: string, fileData: ArrayBuffer): void;
   onLeaderChanged(leader: RoomLeaderData | null): void;
   onConnectionStatusChanged(connected: boolean): void;
-  onTextLoadingComplete(): void;
 }
 
 export class RoomManager
@@ -109,7 +108,6 @@ export class RoomManager
     this.setupMessageHandlers();
     this.setupPeerEvents();
     this.startConnectionStatusMonitoring();
-    this.startTextLoadingTimeout();
   }
 
   private setupPeerEvents(): void {
@@ -130,14 +128,6 @@ export class RoomManager
         this.eventHandler.onConnectionStatusChanged(isConnected);
       }
     }, 1000);
-  }
-
-  private startTextLoadingTimeout(): void {
-    this.textLoadingTimeout = setTimeout(() => {
-      if (this.connectedPeers.size === 0) {
-        this.eventHandler.onTextLoadingComplete();
-      }
-    }, 2000);
   }
 
   private setupMessageHandlers(): void {
@@ -224,12 +214,22 @@ export class RoomManager
       );
       await this.leadershipService.initialize();
 
-      // Listen for other peers joining
-      FirebaseService.onPeerJoined(this.roomId, (peerId) => {
-        if (peerId !== this.peer.id) {
-          this.connectionService.connectToPeer(peerId);
-        }
-      });
+      const leader = this.leadershipService.getCurrentLeader();
+      if (leader && leader.peerId !== this.peer.id) {
+        // Connect to the leader if one exists
+        this.connectionService.connectToPeer(leader.peerId);
+      } else {
+        // Otherwise, connect to all peers
+        FirebaseService.onPeerJoined(this.roomId, (peerId) => {
+          if (peerId !== this.peer.id) {
+            this.connectionService.connectToPeer(peerId);
+          }
+        });
+      }
+
+      if (this.peer.id === leader?.peerId) {
+        this.eventHandler.onTextUpdated(this.getText());
+      }
 
       this.isInitialized = true;
       this.eventHandler.onConnected();
@@ -250,21 +250,27 @@ export class RoomManager
     };
     this.connectionService.sendToConnection(peerId, introMessage);
 
-    // Share existing file metadata with the new peer
-    const existingFiles = this.fileService.getAllSharedFiles();
-    existingFiles.forEach((file) => {
-      const metadataMessage = this.fileService.createFileMetadataMessage(
-        file.id
-      );
-      if (metadataMessage) {
-        this.connectionService.sendToConnection(peerId, metadataMessage);
-      }
-    });
+    // // Share existing file metadata with the new peer
+    // const existingFiles = this.fileService.getAllSharedFiles();
+    // existingFiles.forEach((file) => {
+    //   const metadataMessage = this.fileService.createFileMetadataMessage(
+    //     file.id
+    //   );
+    //   if (metadataMessage) {
+    //     this.connectionService.sendToConnection(peerId, metadataMessage);
+    //   }
+    // });
 
-    // Request room state if we don't have any
-    if (!this.stateService.hasState()) {
-      const stateRequest = this.stateService.createStateRequestMessage();
-      this.connectionService.sendToConnection(peerId, stateRequest);
+    // Request room state if we are not the leader and don't have the state
+    if (
+      !this.leadershipService.getIsLeader() &&
+      !this.stateService.hasState()
+    ) {
+      const leader = this.leadershipService.getCurrentLeader();
+      if (leader && leader.peerId !== this.peer.id) {
+        const stateRequest = this.stateService.createStateRequestMessage();
+        this.connectionService.sendToConnection(leader.peerId, stateRequest);
+      }
     }
   }
 
@@ -287,17 +293,17 @@ export class RoomManager
 
   // FileEventHandler implementation
   public onFileAdded(file: SharedFile): void {
-    if (file.sender === this.userId) {
-      // Don't add our own files to sharedFiles, they are already in localFiles
-      return;
-    }
-    this.eventHandler.onFileAdded(file);
-
     // Broadcast file metadata to all peers
     const metadataMessage = this.fileService.createFileMetadataMessage(file.id);
     if (metadataMessage) {
       this.connectionService.broadcast(metadataMessage);
     }
+
+    if (file.sender === this.userId) {
+      // Don't add our own files to sharedFiles, they are already in localFiles
+      return;
+    }
+    this.eventHandler.onFileAdded(file);
   }
 
   public onFileRemoved(fileId: string): void {
@@ -325,6 +331,11 @@ export class RoomManager
 
   public onLeaderChanged(leaderData: RoomLeaderData | null): void {
     this.eventHandler.onLeaderChanged(leaderData);
+    if (leaderData && leaderData.peerId !== this.peer.id) {
+      if (!this.connectionService.isConnectedTo(leaderData.peerId)) {
+        this.connectionService.connectToPeer(leaderData.peerId);
+      }
+    }
   }
 
   public onSteppedDown(): void {

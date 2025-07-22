@@ -62,6 +62,7 @@ export function useRoom() {
           isUpdatingTextRef.current = false;
         }, 0);
       }
+      setIsTextLoading(false);
     },
     onFileAdded: (file: SharedFile) => {
       setSharedFiles((prev) => {
@@ -97,9 +98,6 @@ export function useRoom() {
     },
     onConnectionStatusChanged: (isConnected: boolean) => {
       setConnected(isConnected);
-    },
-    onTextLoadingComplete: () => {
-      setIsTextLoading(false);
     },
   };
 
