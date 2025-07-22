@@ -250,17 +250,6 @@ export class RoomManager
     };
     this.connectionService.sendToConnection(peerId, introMessage);
 
-    // // Share existing file metadata with the new peer
-    // const existingFiles = this.fileService.getAllSharedFiles();
-    // existingFiles.forEach((file) => {
-    //   const metadataMessage = this.fileService.createFileMetadataMessage(
-    //     file.id
-    //   );
-    //   if (metadataMessage) {
-    //     this.connectionService.sendToConnection(peerId, metadataMessage);
-    //   }
-    // });
-
     // Request room state if we are not the leader and don't have the state
     if (
       !this.leadershipService.getIsLeader() &&
@@ -284,7 +273,10 @@ export class RoomManager
 
   public onConnectionError(peerId: string, error: Error): void {
     this.connectedPeers.delete(peerId);
-    console.error("Connection error with peer:", peerId, error);
+    throw new WebRTCError(
+      `Connection error with peer ${peerId}: ${error.message}`,
+      ERROR_CODES.WEBRTC_CONNECTION_ERROR
+    );
   }
 
   public onMessage(message: PeerMessage): void {
@@ -311,8 +303,8 @@ export class RoomManager
   }
 
   public onFileRequested(fileId: string, requesterId: string): void {
-    // Handle file request (logging, etc.)
-    console.log(`File ${fileId} requested by ${requesterId}`);
+    // Handle file request - could add analytics or monitoring here if needed
+    // For now, this is handled silently as it's a normal operation
   }
 
   public onFileReceived(fileId: string, fileData: ArrayBuffer): void {
@@ -340,6 +332,12 @@ export class RoomManager
 
   public onSteppedDown(): void {
     this.eventHandler.onLeaderChanged(null);
+  }
+
+  public onError(message: string, error: unknown): void {
+    // Convert to Error type for the event handler
+    const err = error instanceof Error ? error : new Error(message);
+    this.eventHandler.onError(err);
   }
 
   // StateEventHandler implementation

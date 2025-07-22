@@ -1,6 +1,7 @@
 import { SharedFile, PeerMessage } from "@/types/webrtc";
 import { v4 as uuidv4 } from "uuid";
 import { FILE_SIZE_LIMITS } from "@/utils/fileDownload";
+import { FileError, ERROR_CODES } from "@/lib/errors";
 
 export interface FileEventHandler {
   onFileAdded(file: SharedFile): void;
@@ -23,8 +24,9 @@ export class FileService {
   public addFile(file: File): string {
     // Validate file size (50MB limit to match legacy behavior)
     if (file.size > FILE_SIZE_LIMITS.MAX_FILE_SIZE) {
-      throw new Error(
-        `File "${file.name}" is too large. Maximum size is ${FILE_SIZE_LIMITS.MAX_FILE_SIZE_MB}MB.`
+      throw new FileError(
+        `File "${file.name}" is too large. Maximum size is ${FILE_SIZE_LIMITS.MAX_FILE_SIZE_MB}MB.`,
+        ERROR_CODES.FILE_TOO_LARGE
       );
     }
 

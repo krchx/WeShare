@@ -138,30 +138,24 @@ export function useRoom() {
       try {
         if (files.length > 0 && roomManagerRef.current) {
           const fileArray = Array.from(files);
+          const fileIds = roomManagerRef.current.addFiles(fileArray);
 
-          try {
-            const fileIds = roomManagerRef.current.addFiles(fileArray);
+          const uploadedFiles: SharedFile[] = fileArray.map((file, index) => ({
+            id: fileIds[index],
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            sender: userId,
+            content: URL.createObjectURL(file),
+          }));
 
-            const uploadedFiles: SharedFile[] = fileArray.map(
-              (file, index) => ({
-                id: fileIds[index],
-                name: file.name,
-                type: file.type,
-                size: file.size,
-                sender: userId,
-                content: URL.createObjectURL(file),
-              })
-            );
-
-            setLocalFiles((prev) => [...prev, ...uploadedFiles]);
-          } catch (error) {
-            showError(
-              error instanceof Error ? error.message : "Failed to upload files"
-            );
-          }
+          setLocalFiles((prev) => [...prev, ...uploadedFiles]);
         }
       } catch (error) {
-        handleError(error, "Failed to upload files. Please try again.");
+        // Use showError for user-facing file upload errors
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to upload files";
+        showError(errorMessage);
       }
     },
     [userId, showError]
