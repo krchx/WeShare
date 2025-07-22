@@ -2,7 +2,6 @@ import React from "react";
 import { SharedFile } from "@/types/webrtc";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { FiDownload } from "react-icons/fi";
-import { useError } from "@/context/ErrorContext";
 import { handleError } from "@/lib/utils";
 
 type FileItem = File | SharedFile;
@@ -22,31 +21,10 @@ export const FileSharing: React.FC<FileSharingProps> = ({
   onDownloadFile,
   downloadingFiles,
 }) => {
-  const { showError } = useError();
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
       const files = e.target.files;
       if (files && files.length > 0) {
-        // Check for file type restrictions if needed
-        const allowedTypes = [
-          "image/",
-          "text/",
-          "application/pdf",
-          "application/json",
-        ];
-        const invalidFiles = Array.from(files).filter(
-          (file) =>
-            !allowedTypes.some((type) => file.type.startsWith(type)) &&
-            !file.type.includes("text") &&
-            file.size > 0 // Allow any file for now, just check it's not empty
-        );
-
-        if (invalidFiles.length > 0 && false) {
-          // Disabled for now - allow all files
-          showError("Some files have unsupported formats and were skipped.");
-        }
-
         onFileUpload(e);
       }
     } catch (error) {
