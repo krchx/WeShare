@@ -6,7 +6,6 @@ import { FileError, ERROR_CODES } from "@/lib/errors";
 export interface FileEventHandler {
   onFileAdded(file: SharedFile): void;
   onFileRemoved(fileId: string): void;
-  onFileRequested(fileId: string, requesterId: string): void;
   onFileReceived(fileId: string, fileData: ArrayBuffer): void;
 }
 
@@ -66,13 +65,9 @@ export class FileService {
     this.eventHandler.onFileAdded(sharedFile);
   }
 
-  public async handleFileRequest(
-    fileId: string,
-    requesterId: string
-  ): Promise<ArrayBuffer | null> {
+  public async handleFileRequest(fileId: string): Promise<ArrayBuffer | null> {
     const file = this.localFiles.get(fileId);
     if (file) {
-      this.eventHandler.onFileRequested(fileId, requesterId);
       return await file.arrayBuffer();
     }
     return null;

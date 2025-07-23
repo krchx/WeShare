@@ -152,8 +152,7 @@ export class RoomManager
         { type: "file-request" }
       >;
       const fileData = await this.fileService.handleFileRequest(
-        requestMessage.data.id,
-        message.sender
+        requestMessage.data.id
       );
       if (fileData) {
         const responseMessage = this.fileService.createFileResponseMessage(
@@ -297,11 +296,6 @@ export class RoomManager
 
   public onFileRemoved(fileId: string): void {
     this.eventHandler.onFileRemoved(fileId);
-  }
-
-  public onFileRequested(fileId: string, requesterId: string): void {
-    // Handle file request - could add analytics or monitoring here if needed
-    // For now, this is handled silently as it's a normal operation
   }
 
   public onFileReceived(fileId: string, fileData: ArrayBuffer): void {
