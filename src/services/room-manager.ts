@@ -251,10 +251,7 @@ export class RoomManager
     this.connectionService.sendToConnection(peerId, introMessage);
 
     // Request room state if we are not the leader and don't have the state
-    if (
-      !this.leadershipService.getIsLeader() &&
-      !this.stateService.hasState()
-    ) {
+    if (!this.leadershipService.getIsLeader()) {
       const leader = this.leadershipService.getCurrentLeader();
       if (leader && leader.peerId !== this.peer.id) {
         const stateRequest = this.stateService.createStateRequestMessage();
@@ -346,23 +343,21 @@ export class RoomManager
   }
 
   public onStateRequested(requesterId: string): void {
-    if (this.stateService.hasState()) {
-      const stateResponse = this.stateService.createStateResponseMessage();
-      const peerId = this.getPeerIdFromUserId(requesterId);
-      if (peerId) {
-        this.connectionService.sendToConnection(peerId, stateResponse);
+    const stateResponse = this.stateService.createStateResponseMessage();
+    const peerId = this.getPeerIdFromUserId(requesterId);
+    if (peerId) {
+      this.connectionService.sendToConnection(peerId, stateResponse);
 
-        // Also send all file metadata to ensure complete state sync
-        const existingFiles = this.fileService.getAllSharedFiles();
-        existingFiles.forEach((file) => {
-          const metadataMessage = this.fileService.createFileMetadataMessage(
-            file.id
-          );
-          if (metadataMessage) {
-            this.connectionService.sendToConnection(peerId, metadataMessage);
-          }
-        });
-      }
+      // Also send all file metadata to ensure complete state sync
+      const existingFiles = this.fileService.getAllSharedFiles();
+      existingFiles.forEach((file) => {
+        const metadataMessage = this.fileService.createFileMetadataMessage(
+          file.id
+        );
+        if (metadataMessage) {
+          this.connectionService.sendToConnection(peerId, metadataMessage);
+        }
+      });
     }
   }
 
