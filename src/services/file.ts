@@ -1,11 +1,11 @@
 import { SharedFile, PeerMessage } from "@/types/webrtc";
 import { v4 as uuidv4 } from "uuid";
 import { FILE_SIZE_LIMITS } from "@/utils/fileDownload";
+import { FileError, ERROR_CODES } from "@/lib/errors";
 
 export interface FileEventHandler {
   onFileAdded(file: SharedFile): void;
   onFileRemoved(fileId: string): void;
-  onFileRequested(fileId: string, requesterId: string): void;
   onFileReceived(fileId: string, fileData: ArrayBuffer): void;
 }
 
@@ -23,8 +23,9 @@ export class FileService {
   public addFile(file: File): string {
     // Validate file size (50MB limit to match legacy behavior)
     if (file.size > FILE_SIZE_LIMITS.MAX_FILE_SIZE) {
-      throw new Error(
-        `File "${file.name}" is too large. Maximum size is ${FILE_SIZE_LIMITS.MAX_FILE_SIZE_MB}MB.`
+      throw new FileError(
+        `File "${file.name}" is too large. Maximum size is ${FILE_SIZE_LIMITS.MAX_FILE_SIZE_MB}MB.`,
+        ERROR_CODES.FILE_TOO_LARGE
       );
     }
 
@@ -64,13 +65,9 @@ export class FileService {
     this.eventHandler.onFileAdded(sharedFile);
   }
 
-  public async handleFileRequest(
-    fileId: string,
-    requesterId: string
-  ): Promise<ArrayBuffer | null> {
+  public async handleFileRequest(fileId: string): Promise<ArrayBuffer | null> {
     const file = this.localFiles.get(fileId);
     if (file) {
-      this.eventHandler.onFileRequested(fileId, requesterId);
       return await file.arrayBuffer();
     }
     return null;

@@ -152,8 +152,7 @@ export class RoomManager
         { type: "file-request" }
       >;
       const fileData = await this.fileService.handleFileRequest(
-        requestMessage.data.id,
-        message.sender
+        requestMessage.data.id
       );
       if (fileData) {
         const responseMessage = this.fileService.createFileResponseMessage(
@@ -250,22 +249,8 @@ export class RoomManager
     };
     this.connectionService.sendToConnection(peerId, introMessage);
 
-    // // Share existing file metadata with the new peer
-    // const existingFiles = this.fileService.getAllSharedFiles();
-    // existingFiles.forEach((file) => {
-    //   const metadataMessage = this.fileService.createFileMetadataMessage(
-    //     file.id
-    //   );
-    //   if (metadataMessage) {
-    //     this.connectionService.sendToConnection(peerId, metadataMessage);
-    //   }
-    // });
-
     // Request room state if we are not the leader and don't have the state
-    if (
-      !this.leadershipService.getIsLeader() &&
-      !this.stateService.hasState()
-    ) {
+    if (!this.leadershipService.getIsLeader()) {
       const leader = this.leadershipService.getCurrentLeader();
       if (leader && leader.peerId !== this.peer.id) {
         const stateRequest = this.stateService.createStateRequestMessage();
@@ -284,7 +269,10 @@ export class RoomManager
 
   public onConnectionError(peerId: string, error: Error): void {
     this.connectedPeers.delete(peerId);
-    console.error("Connection error with peer:", peerId, error);
+    throw new WebRTCError(
+      `Connection error with peer ${peerId}: ${error.message}`,
+      ERROR_CODES.WEBRTC_CONNECTION_ERROR
+    );
   }
 
   public onMessage(message: PeerMessage): void {
@@ -308,11 +296,6 @@ export class RoomManager
 
   public onFileRemoved(fileId: string): void {
     this.eventHandler.onFileRemoved(fileId);
-  }
-
-  public onFileRequested(fileId: string, requesterId: string): void {
-    // Handle file request (logging, etc.)
-    console.log(`File ${fileId} requested by ${requesterId}`);
   }
 
   public onFileReceived(fileId: string, fileData: ArrayBuffer): void {
@@ -342,29 +325,33 @@ export class RoomManager
     this.eventHandler.onLeaderChanged(null);
   }
 
+  public onError(message: string, error: unknown): void {
+    // Convert to Error type for the event handler
+    const err = error instanceof Error ? error : new Error(message);
+    this.eventHandler.onError(err);
+  }
+
   // StateEventHandler implementation
   public onTextUpdated(text: string): void {
     this.eventHandler.onTextUpdated(text);
   }
 
   public onStateRequested(requesterId: string): void {
-    if (this.stateService.hasState()) {
-      const stateResponse = this.stateService.createStateResponseMessage();
-      const peerId = this.getPeerIdFromUserId(requesterId);
-      if (peerId) {
-        this.connectionService.sendToConnection(peerId, stateResponse);
+    const stateResponse = this.stateService.createStateResponseMessage();
+    const peerId = this.getPeerIdFromUserId(requesterId);
+    if (peerId) {
+      this.connectionService.sendToConnection(peerId, stateResponse);
 
-        // Also send all file metadata to ensure complete state sync
-        const existingFiles = this.fileService.getAllSharedFiles();
-        existingFiles.forEach((file) => {
-          const metadataMessage = this.fileService.createFileMetadataMessage(
-            file.id
-          );
-          if (metadataMessage) {
-            this.connectionService.sendToConnection(peerId, metadataMessage);
-          }
-        });
-      }
+      // Also send all file metadata to ensure complete state sync
+      const existingFiles = this.fileService.getAllSharedFiles();
+      existingFiles.forEach((file) => {
+        const metadataMessage = this.fileService.createFileMetadataMessage(
+          file.id
+        );
+        if (metadataMessage) {
+          this.connectionService.sendToConnection(peerId, metadataMessage);
+        }
+      });
     }
   }
 

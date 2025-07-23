@@ -4,7 +4,6 @@ import { FirebaseService } from "@/services/firebase";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { FiShuffle } from "react-icons/fi";
 import { useError } from "@/context/ErrorContext";
-import { handleError } from "@/lib/utils";
 
 interface RandomRoomOptionProps {
   onCreateRoom: (roomId: string) => void;
@@ -39,7 +38,9 @@ export default function RandomRoomOption({
         showError("Failed to generate a unique room ID");
       }
     } catch (err) {
-      handleError(err, "Failed to create random room");
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to create random room";
+      showError(errorMessage);
       setError("Error creating room");
     } finally {
       setIsCreating(false);

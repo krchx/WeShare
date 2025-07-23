@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { FirebaseService } from "@/services/firebase";
 import { useError } from "@/context/ErrorContext";
 import { handleError } from "@/lib/utils";
-import { FirebaseError} from "@/lib/errors";
+import { FirebaseError } from "@/lib/errors";
 
 export function useRoomCreation(onSuccess: (roomId: string) => void) {
   const [isChecking, setIsChecking] = useState(false);
@@ -11,6 +11,36 @@ export function useRoomCreation(onSuccess: (roomId: string) => void) {
   const [roomId, setRoomId] = useState("");
   const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { showError } = useError();
+
+  const checkAvailability = useCallback(
+    async (id: string) => {
+      if (!id.trim()) return;
+
+      if (!/^[a-zA-Z0-9]{3,10}$/.test(id)) {
+        setError("Room name must be 3-10 alphanumeric characters");
+        return;
+      }
+
+      setIsChecking(true);
+      try {
+        const exists = await FirebaseService.checkRoomExists(id);
+        setIsAvailable(!exists);
+        setError(exists ? "This room name is already taken" : "");
+      } catch (error) {
+        if (error instanceof FirebaseError) {
+          setError("Unable to check room availability. Please try again.");
+          showError("Connection error while checking room availability");
+        } else {
+          handleError(error, "Failed to check room availability");
+          setError("Error checking availability");
+        }
+        setIsAvailable(null);
+      } finally {
+        setIsChecking(false);
+      }
+    },
+    [showError]
+  );
 
   // Automatic availability check with debounce
   useEffect(() => {
@@ -34,34 +64,7 @@ export function useRoomCreation(onSuccess: (roomId: string) => void) {
         clearTimeout(checkTimeoutRef.current);
       }
     };
-  }, [roomId]);
-
-  const checkAvailability = async (id: string) => {
-    if (!id.trim()) return;
-
-    if (!/^[a-zA-Z0-9]{3,10}$/.test(id)) {
-      setError("Room name must be 3-10 alphanumeric characters");
-      return;
-    }
-
-    setIsChecking(true);
-    try {
-      const exists = await FirebaseService.checkRoomExists(id);
-      setIsAvailable(!exists);
-      setError(exists ? "This room name is already taken" : "");
-    } catch (error) {
-      if (error instanceof FirebaseError) {
-        setError("Unable to check room availability. Please try again.");
-        showError("Connection error while checking room availability");
-      } else {
-        handleError(error, "Failed to check room availability");
-        setError("Error checking availability");
-      }
-      setIsAvailable(null);
-    } finally {
-      setIsChecking(false);
-    }
-  };
+  }, [roomId, checkAvailability]);
 
   const createRoom = async () => {
     if (!roomId.trim()) {

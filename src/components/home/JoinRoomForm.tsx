@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FirebaseService } from "@/services/firebase";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { FiLogIn } from "react-icons/fi";
-import { handleError } from "@/lib/utils";
+import { useError } from "@/context/ErrorContext";
 
 interface JoinRoomFormProps {
   onJoinRoom: (roomId: string) => void;
@@ -12,6 +12,7 @@ export default function JoinRoomForm({ onJoinRoom }: JoinRoomFormProps) {
   const [roomId, setRoomId] = useState("");
   const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState("");
+  const { showError } = useError();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +31,9 @@ export default function JoinRoomForm({ onJoinRoom }: JoinRoomFormProps) {
 
       onJoinRoom(roomId);
     } catch (err) {
-      handleError(err, "Failed to check if room exists");
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to check if room exists";
+      showError(errorMessage);
       setError("Error checking room");
     } finally {
       setIsChecking(false);

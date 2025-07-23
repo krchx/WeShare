@@ -5,6 +5,7 @@ export interface LeadershipEventHandler {
   onBecameLeader(leaderData: RoomLeaderData): void;
   onLeaderChanged(leaderData: RoomLeaderData | null): void;
   onSteppedDown(): void;
+  onError?(message: string, error: unknown): void;
 }
 
 export class LeadershipService {
@@ -82,10 +83,16 @@ export class LeadershipService {
         await this.becomeLeader();
       } else {
         this.isLeader = false;
+        // Keep debug log for leadership changes
         console.log("Another peer is the leader:", earliestPeer.userId);
       }
     } catch (error) {
-      console.error("Error during leader election:", error);
+      // Use event handler for error reporting if available
+      if (this.eventHandler.onError) {
+        this.eventHandler.onError("Failed to complete leader election", error);
+      } else {
+        console.error("Error during leader election:", error);
+      }
     } finally {
       this.electionInProgress = false;
     }
@@ -104,9 +111,15 @@ export class LeadershipService {
       this.currentLeader = leaderData;
       this.eventHandler.onBecameLeader(leaderData);
 
+      // Keep debug log for leadership changes
       console.log("Became room leader:", this.userId);
     } catch (error) {
-      console.error("Failed to become leader:", error);
+      // Use event handler for error reporting if available
+      if (this.eventHandler.onError) {
+        this.eventHandler.onError("Failed to become room leader", error);
+      } else {
+        console.error("Failed to become leader:", error);
+      }
       this.isLeader = false;
     }
   }
@@ -120,9 +133,15 @@ export class LeadershipService {
       this.currentLeader = null;
       this.eventHandler.onSteppedDown();
 
+      // Keep debug log for leadership changes
       console.log("Stepped down as leader:", this.userId);
     } catch (error) {
-      console.error("Failed to step down as leader:", error);
+      // Use event handler for error reporting if available
+      if (this.eventHandler.onError) {
+        this.eventHandler.onError("Failed to step down as leader", error);
+      } else {
+        console.error("Failed to step down as leader:", error);
+      }
     }
   }
 

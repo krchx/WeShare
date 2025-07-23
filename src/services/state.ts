@@ -78,10 +78,4 @@ export class StateService {
       sender: this.userId,
     };
   }
-
-  public hasState(): boolean {
-    const text = this.getText();
-    const files = this.getFiles();
-    return text.length > 0 || files.length > 0;
-  }
 }
