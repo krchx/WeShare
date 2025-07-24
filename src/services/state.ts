@@ -42,7 +42,8 @@ export class StateService {
   ): void {
     const { text } = message.data;
 
-    if (text) {
+    // Always update text, even if it's empty - this ensures proper sync
+    if (text !== undefined && text !== null) {
       this.eventHandler.onTextUpdated(text);
     }
 
