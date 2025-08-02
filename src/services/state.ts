@@ -42,9 +42,11 @@ export class StateService {
   ): void {
     const { text } = message.data;
 
-    // Always update text, even if it's empty - this ensures proper sync
-    if (text !== undefined && text !== null) {
+    // Always update text, even if it's empty
+    if (text) {
       this.eventHandler.onTextUpdated(text);
+    } else {
+      this.eventHandler.onTextUpdated("");
     }
 
     // Files metadata will be handled by individual file-metadata messages
