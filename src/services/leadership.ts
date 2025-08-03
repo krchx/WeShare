@@ -67,11 +67,6 @@ export class LeadershipService {
     try {
       const peers = await FirebaseService.getAllPeersInRoom(this.roomId);
 
-      if (peers.length === 0) {
-        await this.becomeLeader();
-        return;
-      }
-
       // Find the peer with the earliest join time
       const earliestPeer = peers.reduce((earliest, current) => {
         return current.peerData.joinedAt < earliest.peerData.joinedAt
