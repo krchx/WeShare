@@ -119,30 +119,6 @@ export class FirebaseService {
   }
 
   /**
-   * Properly disconnect a user when they leave
-   */
-  static async disconnectUser(
-    roomId: string,
-    userId: string
-  ): Promise<boolean> {
-    try {
-      const userRef = ref(database, `rooms/${roomId}/users/${userId}`);
-      await remove(userRef);
-
-      // Also remove any associated messages or state
-      const messagesRef = ref(database, `rooms/${roomId}/messages/${userId}`);
-      await remove(messagesRef);
-
-      return true;
-    } catch {
-      throw new FirebaseError(
-        "Failed to disconnect user properly",
-        ERROR_CODES.FIREBASE_NETWORK_ERROR
-      );
-    }
-  }
-
-  /**
    * Remove a peer from a room when they leave
    */
   static async removePeerFromRoom(
@@ -285,7 +261,7 @@ export class FirebaseService {
         const userId = childSnapshot.key as string;
         const peerData = childSnapshot.val() as PeerData;
         if (userId && peerData) {
-          peers.push({ userId, peerData });
+            peers.push({ userId, peerData });
         }
       });
 

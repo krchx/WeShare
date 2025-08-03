@@ -62,11 +62,11 @@ export class RoomManager
     this.getFiles = getFiles;
 
     // Get or generate user ID
-    const storedUserId = sessionStorage.getItem("weshare-userId");
-    this.userId = storedUserId || generateUserId();
-    if (!storedUserId) {
-      sessionStorage.setItem("weshare-userId", this.userId);
-    }
+    // const storedUserId = sessionStorage.getItem("weshare-userId");
+    this.userId = generateUserId();
+    // if (!storedUserId) {
+    //   sessionStorage.setItem("weshare-userId", this.userId);
+    // }
 
     try {
       // Initialize peer
@@ -107,7 +107,7 @@ export class RoomManager
 
     this.setupMessageHandlers();
     this.setupPeerEvents();
-    this.startConnectionStatusMonitoring();
+    // this.startConnectionStatusMonitoring();
   }
 
   private setupPeerEvents(): void {

@@ -115,8 +115,31 @@ export function useRoom() {
       roomManagerRef.current = roomManager;
       setUserId(roomManager.getUserId());
 
-      return () => {
+      const cleanup = () => {
         roomManager.disconnect();
+      };
+
+      const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+        event.preventDefault();
+        event.returnValue = "All shared files will be lost and you will join as a new peer. Are you sure?";
+        cleanup();
+      };
+
+      const handleUnload = () => {
+        cleanup();
+      };
+
+      // Register event listeners
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      window.addEventListener('unload', handleUnload);
+
+      return () => {
+        // Remove event listeners
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+        window.removeEventListener('unload', handleUnload);
+        
+        // Cleanup room manager
+        cleanup();
       };
     } catch (error) {
       handleError(error, "Failed to initialize room");
