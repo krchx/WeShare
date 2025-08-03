@@ -18,7 +18,6 @@ export default function Room() {
     connected,
     peers,
     userId,
-    shareRoom,
     isTextLoading,
     downloadingFiles,
   } = useRoom();
@@ -46,7 +45,6 @@ export default function Room() {
         roomId={roomId}
         connected={connected}
         isLoading={isTextLoading}
-        onShareRoom={shareRoom}
       />
 
       <div className="flex flex-col md:flex-row flex-1">

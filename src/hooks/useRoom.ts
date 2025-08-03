@@ -200,21 +200,6 @@ export function useRoom() {
     [showError]
   );
 
-  // Share room functionality
-  const shareRoom = useCallback(async () => {
-    try {
-      if (roomManagerRef.current) {
-        await roomManagerRef.current.shareRoom();
-        showSuccess("Room link copied to clipboard!");
-      }
-    } catch (error) {
-      handleError(
-        error,
-        "Failed to copy room link. Please copy the URL manually."
-      );
-    }
-  }, [showSuccess]);
-
   useEffect(() => {
     textRef.current = text;
     sharedFilesRef.current = sharedFiles;
@@ -231,7 +216,6 @@ export function useRoom() {
     connected,
     peers,
     userId,
-    shareRoom,
     isTextLoading,
     downloadingFiles,
   };

@@ -7,20 +7,17 @@ interface HeaderProps {
   roomId: string;
   connected: boolean;
   isLoading: boolean;
-  onShareRoom: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   roomId,
   connected,
   isLoading = false,
-  onShareRoom,
 }) => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const openShareModal = () => {
     setIsShareModalOpen(true);
-    onShareRoom();
   };
 
   return (
