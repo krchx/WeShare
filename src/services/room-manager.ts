@@ -417,14 +417,6 @@ export class RoomManager
     return this.leadershipService.getCurrentLeader();
   }
 
-  public async shareRoom(): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-    } catch {
-      throw new Error("Failed to copy room link to clipboard");
-    }
-  }
-
   public disconnect(): void {
     if (this.connectionStatusInterval) {
       clearInterval(this.connectionStatusInterval);
