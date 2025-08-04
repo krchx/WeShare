@@ -119,27 +119,6 @@ export class LeadershipService {
     }
   }
 
-  public async stepDown(): Promise<void> {
-    if (!this.isLeader) return;
-
-    try {
-      await FirebaseService.removeRoomLeader(this.roomId);
-      this.isLeader = false;
-      this.currentLeader = null;
-      this.eventHandler.onSteppedDown();
-
-      // Keep debug log for leadership changes
-      console.log("Stepped down as leader:", this.userId);
-    } catch (error) {
-      // Use event handler for error reporting if available
-      if (this.eventHandler.onError) {
-        this.eventHandler.onError("Failed to step down as leader", error);
-      } else {
-        console.error("Failed to step down as leader:", error);
-      }
-    }
-  }
-
   public handleLeaderDisconnect(): void {
     this.currentLeader = null;
     this.eventHandler.onLeaderChanged(null);

@@ -5,9 +5,7 @@ import {
   set,
   onChildAdded,
   onDisconnect,
-  remove,
   get,
-  onChildRemoved,
   onValue,
 } from "firebase/database";
 import { PeerData, RoomLeaderData } from "@/types/webrtc";
@@ -84,53 +82,6 @@ export class FirebaseService {
     } catch {
       throw new FirebaseError(
         "Failed to listen for peer connections. Please refresh and try again.",
-        ERROR_CODES.FIREBASE_NETWORK_ERROR
-      );
-    }
-  }
-
-  /**
-   * Set up a listener for user disconnections
-   */
-  static listenForDisconnections(
-    roomId: string,
-    callback: (userId: string) => void
-  ) {
-    try {
-      const roomRef = ref(database, `rooms/${roomId}/users`);
-
-      return onChildRemoved(roomRef, (snapshot) => {
-        try {
-          const userId = snapshot.key;
-          if (userId) {
-            callback(userId);
-          }
-        } catch (error) {
-          // Log locally but don't throw to avoid disrupting the listener
-          console.error("Error processing disconnection event:", error);
-        }
-      });
-    } catch {
-      throw new FirebaseError(
-        "Failed to set up disconnection listener",
-        ERROR_CODES.FIREBASE_NETWORK_ERROR
-      );
-    }
-  }
-
-  /**
-   * Remove a peer from a room when they leave
-   */
-  static async removePeerFromRoom(
-    roomId: string,
-    userId: string
-  ): Promise<void> {
-    try {
-      const peerRef = ref(database, `rooms/${roomId}/peers/${userId}`);
-      await remove(peerRef);
-    } catch {
-      throw new FirebaseError(
-        "Failed to remove peer from room",
         ERROR_CODES.FIREBASE_NETWORK_ERROR
       );
     }
@@ -228,21 +179,6 @@ export class FirebaseService {
   }
 
   /**
-   * Remove the room leader
-   */
-  static async removeRoomLeader(roomId: string): Promise<void> {
-    try {
-      const leaderRef = ref(database, `rooms/${roomId}/leader`);
-      await remove(leaderRef);
-    } catch {
-      throw new FirebaseError(
-        "Failed to remove room leader",
-        ERROR_CODES.FIREBASE_NETWORK_ERROR
-      );
-    }
-  }
-
-  /**
    * Get all peers in a room (for leader election)
    */
   static async getAllPeersInRoom(
@@ -261,7 +197,7 @@ export class FirebaseService {
         const userId = childSnapshot.key as string;
         const peerData = childSnapshot.val() as PeerData;
         if (userId && peerData) {
-            peers.push({ userId, peerData });
+          peers.push({ userId, peerData });
         }
       });
 

@@ -61,12 +61,8 @@ export class RoomManager
     this.getText = getText;
     this.getFiles = getFiles;
 
-    // Get or generate user ID
-    // const storedUserId = sessionStorage.getItem("weshare-userId");
+    // Generate unique user ID for this session
     this.userId = generateUserId();
-    // if (!storedUserId) {
-    //   sessionStorage.setItem("weshare-userId", this.userId);
-    // }
 
     try {
       // Initialize peer
@@ -107,7 +103,6 @@ export class RoomManager
 
     this.setupMessageHandlers();
     this.setupPeerEvents();
-    // this.startConnectionStatusMonitoring();
   }
 
   private setupPeerEvents(): void {
@@ -118,16 +113,6 @@ export class RoomManager
     this.peer.on("error", (err) => {
       this.eventHandler.onError(err);
     });
-  }
-
-  private startConnectionStatusMonitoring(): void {
-    this.connectionStatusInterval = setInterval(() => {
-      const wasConnected = this.isInitialized && !!this.peer.id;
-      const isConnected = this.isConnected();
-      if (wasConnected !== isConnected) {
-        this.eventHandler.onConnectionStatusChanged(isConnected);
-      }
-    }, 1000);
   }
 
   private setupMessageHandlers(): void {
@@ -428,11 +413,6 @@ export class RoomManager
       this.textLoadingTimeout = null;
     }
 
-    if (this.leadershipService.getIsLeader()) {
-      this.leadershipService.stepDown();
-    }
-
-    FirebaseService.removePeerFromRoom(this.roomId, this.userId);
     this.connectionService.disconnect();
     this.messageService.clear();
     this.fileService.clear();
