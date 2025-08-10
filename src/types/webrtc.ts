@@ -6,6 +6,7 @@ export type MessageType =
   | "file-share"
   | "user-joined"
   | "room-state-request"
+  | "room-state-response"
   | "leader-election"
   | "leader-announcement"
   | "leader-handover";
@@ -15,7 +16,11 @@ export type PeerMessage =
   | { sender: string; type: "file-share"; data: SharedFile }
   | { sender: string; type: "file-metadata"; data: SharedFile }
   | { sender: string; type: "file-request"; data: { id: string } }
-  | { sender: string; type: "file-response"; data: { fileData: ArrayBuffer, fileId: string } }
+  | {
+      sender: string;
+      type: "file-response";
+      data: { fileData: ArrayBuffer; fileId: string };
+    }
   | { sender: string; type: "user-joined"; data: { userId: string } }
   | { sender: string; type: "room-state-request"; data: string }
   | { sender: string; type: "room-state-response"; data: RoomStateData }
