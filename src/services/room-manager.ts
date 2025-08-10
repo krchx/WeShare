@@ -199,17 +199,30 @@ export class RoomManager
       await this.leadershipService.initialize();
 
       const leader = this.leadershipService.getCurrentLeader();
+
+      // First connect to the leader if one exists
       if (leader && leader.peerId !== this.peer.id) {
-        // Connect to the leader if one exists
         this.connectionService.connectToPeer(leader.peerId);
-      } else {
-        // Otherwise, connect to all peers
-        FirebaseService.onPeerJoined(this.roomId, (peerId) => {
-          if (peerId !== this.peer.id) {
-            this.connectionService.connectToPeer(peerId);
-          }
-        });
       }
+      // Then connect to all other peers
+      const existingPeers = await FirebaseService.getAllPeersInRoom(
+        this.roomId
+      );
+      existingPeers.forEach((peer) => {
+        if (
+          peer.peerData.peerId !== this.peer.id &&
+          peer.peerData.peerId !== leader?.peerId
+        ) {
+          this.connectionService.connectToPeer(peer.peerData.peerId);
+        }
+      });
+
+      // Set up listener for future peers
+      FirebaseService.onPeerJoined(this.roomId, (peerId) => {
+        if (peerId !== this.peer.id) {
+          this.connectionService.connectToPeer(peerId);
+        }
+      });
 
       if (this.peer.id === leader?.peerId) {
         this.eventHandler.onTextUpdated(this.getText());
