@@ -284,11 +284,9 @@ export class RoomManager
     if (metadataMessage) {
       this.connectionService.broadcast(metadataMessage);
     }
+  }
 
-    if (file.sender === this.userId) {
-      // Don't add our own files to sharedFiles, they are already in localFiles
-      return;
-    }
+  public onFileMetaDataReceived(file: SharedFile): void {
     this.eventHandler.onFileAdded(file);
   }
 

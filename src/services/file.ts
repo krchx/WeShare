@@ -7,6 +7,7 @@ export interface FileEventHandler {
   onFileAdded(file: SharedFile): void;
   onFileRemoved(fileId: string): void;
   onFileReceived(fileId: string, fileData: ArrayBuffer): void;
+  onFileMetaDataReceived(file: SharedFile): void;
 }
 
 export class FileService {
@@ -62,7 +63,7 @@ export class FileService {
 
   public addSharedFile(sharedFile: SharedFile): void {
     this.sharedFiles.set(sharedFile.id, sharedFile);
-    this.eventHandler.onFileAdded(sharedFile);
+    this.eventHandler.onFileMetaDataReceived(sharedFile);
   }
 
   public async handleFileRequest(fileId: string): Promise<ArrayBuffer | null> {
