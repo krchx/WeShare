@@ -64,3 +64,39 @@ export function formatFileSize(bytes: number): string {
 
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
+
+export function getArrayBufferFromData(
+  fileData: ArrayBuffer | ArrayBufferView | object
+): ArrayBuffer {
+  let arrayBuffer: ArrayBuffer;
+
+  if (fileData instanceof ArrayBuffer) {
+    arrayBuffer = fileData;
+  } else if (ArrayBuffer.isView(fileData)) {
+    // Handle typed arrays (Uint8Array, etc.)
+    const buffer = fileData.buffer;
+    if (buffer instanceof ArrayBuffer) {
+      arrayBuffer = buffer.slice(
+        fileData.byteOffset,
+        fileData.byteOffset + fileData.byteLength
+      );
+    } else {
+      // Handle SharedArrayBuffer by copying to ArrayBuffer
+      const uint8Array = new Uint8Array(
+        fileData.buffer,
+        fileData.byteOffset,
+        fileData.byteLength
+      );
+      arrayBuffer = uint8Array.slice().buffer;
+    }
+  } else if (typeof fileData === "object" && fileData !== null) {
+    // Handle plain objects that were serialized from ArrayBuffer
+    const uint8Array = new Uint8Array(Object.values(fileData));
+    arrayBuffer = uint8Array.buffer;
+  } else {
+    console.error(`Unexpected file data type:`, typeof fileData);
+    throw new Error("Invalid file data type");
+  }
+
+  return arrayBuffer;
+}

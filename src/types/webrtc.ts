@@ -1,9 +1,8 @@
 export type MessageType =
   | "text-update"
   | "file-metadata"
-  | "file-request"
-  | "file-response"
-  | "file-share"
+  | "file-content-request"
+  | "file-content-response"
   | "user-joined"
   | "room-state-request"
   | "room-state-response"
@@ -13,12 +12,11 @@ export type MessageType =
 
 export type PeerMessage =
   | { sender: string; type: "text-update"; data: string }
-  | { sender: string; type: "file-share"; data: SharedFile }
-  | { sender: string; type: "file-metadata"; data: SharedFile }
-  | { sender: string; type: "file-request"; data: { id: string } }
+  | { sender: string; type: "file-metadata"; data: FileData[] }
+  | { sender: string; type: "file-content-request"; data: { id: string } }
   | {
       sender: string;
-      type: "file-response";
+      type: "file-content-response";
       data: { fileData: ArrayBuffer; fileId: string };
     }
   | { sender: string; type: "user-joined"; data: { userId: string } }
@@ -31,7 +29,7 @@ export type PeerMessage =
 
 export interface RoomStateData {
   text: string;
-  files: SharedFile[];
+  files: FileData[];
 }
 
 export interface PeerData {
@@ -51,13 +49,14 @@ export interface LeaderElectionData {
   joinedAt: number;
 }
 
-export interface SharedFile extends FileMetadata {
-  content?: string | ArrayBuffer; // Optional - only populated when downloaded
-}
-export interface FileMetadata {
+export interface FileData {
   id: string; // Unique ID for the file
   name: string;
   type: string;
   size: number;
   sender: string; // User ID of the uploader
+  uploadedByMe?: boolean; // Indicates if the file was uploaded by the current user
+  isDownloading?: boolean; // Indicates if the file is currently being downloaded
+  hasContent?: boolean; // Indicates if the file content is available
+  content?: File | ArrayBuffer; // File object for uploaded files, ArrayBuffer for downloaded files
 }

@@ -1,17 +1,14 @@
 import React from "react";
-import { SharedFile } from "@/types/webrtc";
+import { FileData } from "@/types/webrtc";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { FiDownload } from "react-icons/fi";
 import { handleError } from "@/lib/utils";
 
-type FileItem = File | SharedFile;
-
 interface FileSharingProps {
-  localFiles: FileItem[];
-  sharedFiles: SharedFile[];
+  localFiles: FileData[];
+  sharedFiles: FileData[];
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onDownloadFile: (file: SharedFile) => void;
-  downloadingFiles: Set<string>;
+  onDownloadFile: (file: FileData) => void;
 }
 
 export const FileSharing: React.FC<FileSharingProps> = ({
@@ -19,7 +16,6 @@ export const FileSharing: React.FC<FileSharingProps> = ({
   sharedFiles,
   onFileUpload,
   onDownloadFile,
-  downloadingFiles,
 }) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -32,7 +28,7 @@ export const FileSharing: React.FC<FileSharingProps> = ({
     }
   };
 
-  const handleDownload = (file: SharedFile) => {
+  const handleDownload = (file: FileData) => {
     try {
       onDownloadFile(file);
     } catch (error) {
@@ -84,7 +80,7 @@ export const FileSharing: React.FC<FileSharingProps> = ({
                   <span>{(file.size / 1024).toFixed(1)} KB</span>
                   <span>From {file.sender.substring(0, 6)}</span>
                 </div>
-                {downloadingFiles.has(file.id) ? (
+                {file.isDownloading ? (
                   <div className="mt-1 text-xs text-blue-600 flex items-center">
                     <AiOutlineLoading3Quarters className="mr-1 animate-spin" />
                     Downloading...

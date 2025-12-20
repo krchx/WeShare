@@ -19,7 +19,6 @@ export default function Room() {
     peers,
     userId,
     isTextLoading,
-    downloadingFiles,
   } = useRoom();
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -41,11 +40,7 @@ export default function Room() {
         backgroundPosition: "center",
       }}
     >
-      <Header
-        roomId={roomId}
-        connected={connected}
-        isLoading={isTextLoading}
-      />
+      <Header roomId={roomId} connected={connected} isLoading={isTextLoading} />
 
       <div className="flex flex-col md:flex-row flex-1">
         <TextEditor
@@ -57,7 +52,6 @@ export default function Room() {
 
         <div className="flex flex-col md:w-80 border-2 border-gray-300 rounded-lg p-4 mx-4 my-2 md:my-4 bg-blue-300/30 backdrop-blur-sm">
           <FileSharing
-            downloadingFiles={downloadingFiles}
             localFiles={localFiles}
             sharedFiles={sharedFiles}
             onFileUpload={handleFileUploadWrapper}

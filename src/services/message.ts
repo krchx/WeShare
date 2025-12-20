@@ -1,68 +1,48 @@
-import { PeerMessage } from "@/types/webrtc";
+import { PeerMessage, FileData } from "@/types/webrtc";
 
-export type MessageHandler = (message: PeerMessage) => void;
+export function createTextUpdateMessage(
+  userId: string,
+  text: string
+): PeerMessage {
+  return {
+    type: "text-update",
+    data: text,
+    sender: userId,
+  };
+}
 
-export class MessageService {
-  private handlers: Map<string, MessageHandler[]> = new Map();
-  private globalHandlers: MessageHandler[] = [];
+export function createRoomStateRequestMessage(userId: string): PeerMessage {
+  return {
+    type: "room-state-request",
+    data: "",
+    sender: userId,
+  };
+}
 
-  public registerHandler(
-    messageType: string,
-    handler: MessageHandler
-  ): () => void {
-    if (!this.handlers.has(messageType)) {
-      this.handlers.set(messageType, []);
-    }
-    this.handlers.get(messageType)!.push(handler);
+export function createFileContentResponseMessage(
+  userId: string,
+  fileId: string,
+  fileData: ArrayBuffer
+): PeerMessage {
+  return {
+    type: "file-content-response",
+    data: { fileId, fileData },
+    sender: userId,
+  };
+}
 
-    // Return unsubscribe function
-    return () => {
-      const handlers = this.handlers.get(messageType);
-      if (handlers) {
-        const index = handlers.indexOf(handler);
-        if (index > -1) {
-          handlers.splice(index, 1);
-        }
-      }
-    };
-  }
-
-  public registerGlobalHandler(handler: MessageHandler): () => void {
-    this.globalHandlers.push(handler);
-
-    return () => {
-      const index = this.globalHandlers.indexOf(handler);
-      if (index > -1) {
-        this.globalHandlers.splice(index, 1);
-      }
-    };
-  }
-
-  public handleMessage(message: PeerMessage): void {
-    // Handle global handlers first
-    this.globalHandlers.forEach((handler) => {
-      try {
-        handler(message);
-      } catch (error) {
-        console.error("Error in global message handler:", error);
-      }
-    });
-
-    // Handle specific message type handlers
-    const handlers = this.handlers.get(message.type);
-    if (handlers) {
-      handlers.forEach((handler) => {
-        try {
-          handler(message);
-        } catch (error) {
-          console.error(`Error in ${message.type} handler:`, error);
-        }
-      });
-    }
-  }
-
-  public clear(): void {
-    this.handlers.clear();
-    this.globalHandlers = [];
-  }
+export function createRoomStateResponseMessage(
+  userId: string,
+  text: string,
+  sharedFiles: Map<string, FileData>,
+  localFiles: Map<string, FileData>
+): PeerMessage {
+  return {
+    type: "room-state-response",
+    data: {
+      text,
+      files: [...sharedFiles.values(), ...localFiles.values()],
+    },
+    sender: userId,
+  };
 }
