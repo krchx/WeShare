@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { SharedFile } from "@/types/webrtc";
 import { useError } from "@/context/ErrorContext";
@@ -24,12 +24,13 @@ export function useRoom() {
   const [userId, setUserId] = useState<string>("");
   const [isTextLoading, setIsTextLoading] = useState(true);
   const [downloadingFiles, setDownloadingFiles] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const textRef = useRef("");
   const sharedFilesRef = useRef<SharedFile[]>([]);
   const isUpdatingTextRef = useRef(false);
   const roomManagerRef = useRef<RoomManager | null>(null);
+  const hasCleanedUpRef = useRef(false);
 
   // Get initial text from the editor
   const getEditorText = () => textRef.current;
@@ -38,68 +39,73 @@ export function useRoom() {
   const getSharedFiles = () => sharedFilesRef.current;
 
   // Create room event handler
-  const roomEventHandler: RoomEventHandler = {
-    onUserJoined: (userId: string) => {
-      setPeers((prev) => (prev.includes(userId) ? prev : [...prev, userId]));
-    },
-    onUserLeft: (userId: string) => {
-      setPeers((prev) => prev.filter((id) => id !== userId));
-    },
-    onConnected: () => {
-      setConnected(true);
-    },
-    onDisconnected: () => {
-      setConnected(false);
-    },
-    onError: (error: Error) => {
-      showError(error.message);
-    },
-    onTextUpdated: (newText: string) => {
-      if (!isUpdatingTextRef.current) {
-        isUpdatingTextRef.current = true;
-        setText(newText);
-        setTimeout(() => {
-          isUpdatingTextRef.current = false;
-        }, 0);
-      }
-      setIsTextLoading(false);
-    },
-    onFileAdded: (file: SharedFile) => {
-      setSharedFiles((prev) => {
-        // Avoid duplicates
-        if (prev.find((f) => f.id === file.id)) {
-          return prev;
+  const roomEventHandler = useMemo<RoomEventHandler>(
+    () => ({
+      onUserJoined: (userId: string) => {
+        setPeers((prev) => (prev.includes(userId) ? prev : [...prev, userId]));
+      },
+      onUserLeft: (userId: string) => {
+        setPeers((prev) => prev.filter((id) => id !== userId));
+      },
+      onConnected: () => {
+        setConnected(true);
+      },
+      onDisconnected: () => {
+        setConnected(false);
+      },
+      onError: (error: Error) => {
+        showError(error.message);
+      },
+      onTextUpdated: (newText: string) => {
+        if (!isUpdatingTextRef.current) {
+          isUpdatingTextRef.current = true;
+          setText(newText);
+          setTimeout(() => {
+            isUpdatingTextRef.current = false;
+          }, 0);
         }
-        return [...prev, file];
-      });
-    },
-    onFileRemoved: (fileId: string) => {
-      setSharedFiles((prev) => prev.filter((f) => f.id !== fileId));
-    },
-    onFileReceived: (fileId: string, fileData: ArrayBuffer) => {
-      // Find the file in sharedFiles, not in the closure
-      setSharedFiles((currentSharedFiles) => {
-        const file = currentSharedFiles.find((f) => f.id === fileId);
-        if (file) {
-          downloadFileFromArrayBuffer(fileData, file.name, file.type);
+        setIsTextLoading(false);
+      },
+      onFileAdded: (file: SharedFile) => {
+        setSharedFiles((prev) => {
+          if (prev.find((existingFile) => existingFile.id === file.id)) {
+            return prev;
+          }
 
-          setDownloadingFiles((prev) => {
-            const newSet = new Set(prev);
-            newSet.delete(fileId);
-            return newSet;
-          });
-          showSuccess(`Downloaded ${file.name}`);
-        }
-        return currentSharedFiles;
-      });
-    },
-    onLeaderChanged: () => {
-      // Leader changes are handled internally by RoomManager
-    },
-    onConnectionStatusChanged: (isConnected: boolean) => {
-      setConnected(isConnected);
-    },
-  };
+          return [...prev, file];
+        });
+      },
+      onFileRemoved: (fileId: string) => {
+        setSharedFiles((prev) => prev.filter((file) => file.id !== fileId));
+      },
+      onFileReceived: (fileId: string, fileData: ArrayBuffer) => {
+        setSharedFiles((currentSharedFiles) => {
+          const file = currentSharedFiles.find(
+            (sharedFile) => sharedFile.id === fileId,
+          );
+          if (file) {
+            downloadFileFromArrayBuffer(fileData, file.name, file.type);
+
+            setDownloadingFiles((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(fileId);
+              return newSet;
+            });
+            showSuccess(`Downloaded ${file.name}`);
+          }
+
+          return currentSharedFiles;
+        });
+      },
+      onLeaderChanged: () => {
+        // Leader changes are handled internally by RoomManager
+      },
+      onConnectionStatusChanged: (isConnected: boolean) => {
+        setConnected(isConnected);
+      },
+    }),
+    [showError, showSuccess],
+  );
 
   // Initialize RoomManager
   useEffect(() => {
@@ -110,19 +116,25 @@ export function useRoom() {
         roomId,
         getEditorText,
         getSharedFiles,
-        roomEventHandler
+        roomEventHandler,
       );
       roomManagerRef.current = roomManager;
       setUserId(roomManager.getUserId());
+      hasCleanedUpRef.current = false;
 
       const cleanup = () => {
+        if (hasCleanedUpRef.current) {
+          return;
+        }
+
+        hasCleanedUpRef.current = true;
         roomManager.disconnect();
       };
 
       const handleBeforeUnload = (event: BeforeUnloadEvent) => {
         event.preventDefault();
-        event.returnValue = "All shared files will be lost and you will join as a new peer. Are you sure?";
-        cleanup();
+        event.returnValue =
+          "All shared files will be lost and you will join as a new peer. Are you sure?";
       };
 
       const handleUnload = () => {
@@ -130,14 +142,14 @@ export function useRoom() {
       };
 
       // Register event listeners
-      window.addEventListener('beforeunload', handleBeforeUnload);
-      window.addEventListener('unload', handleUnload);
+      window.addEventListener("beforeunload", handleBeforeUnload);
+      window.addEventListener("unload", handleUnload);
 
       return () => {
         // Remove event listeners
-        window.removeEventListener('beforeunload', handleBeforeUnload);
-        window.removeEventListener('unload', handleUnload);
-        
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+        window.removeEventListener("unload", handleUnload);
+
         // Cleanup room manager
         cleanup();
       };
@@ -145,7 +157,7 @@ export function useRoom() {
       handleError(error, "Failed to initialize room");
       setIsTextLoading(false);
     }
-  }, [roomId]);
+  }, [roomEventHandler, roomId]);
 
   // Update text and broadcast changes
   const updateText = useCallback((newText: string) => {
@@ -181,7 +193,7 @@ export function useRoom() {
         showError(errorMessage);
       }
     },
-    [userId, showError]
+    [userId, showError],
   );
 
   // Download a shared file by requesting it from the owner
@@ -196,7 +208,7 @@ export function useRoom() {
         if (fileMetadata.content) {
           downloadFileFromUrl(
             fileMetadata.content as string,
-            fileMetadata.name
+            fileMetadata.name,
           );
           return;
         }
@@ -209,7 +221,7 @@ export function useRoom() {
 
         roomManagerRef.current.requestFile(
           fileMetadata.id,
-          fileMetadata.sender
+          fileMetadata.sender,
         );
       } catch (error) {
         handleError(error, "Failed to download file. Please try again.");
@@ -220,7 +232,7 @@ export function useRoom() {
         });
       }
     },
-    [showError]
+    [showError],
   );
 
   useEffect(() => {

@@ -17,13 +17,15 @@ export class LeadershipService {
   private currentLeader: RoomLeaderData | null = null;
   private eventHandler: LeadershipEventHandler;
   private electionInProgress: boolean = false;
+  private unsubscribeLeaderChanges: (() => void) | null = null;
+  private reElectionTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     userId: string,
     peerId: string,
     roomId: string,
     joinedAt: number,
-    eventHandler: LeadershipEventHandler
+    eventHandler: LeadershipEventHandler,
   ) {
     this.userId = userId;
     this.peerId = peerId;
@@ -47,17 +49,20 @@ export class LeadershipService {
     }
 
     // Listen for leader changes
-    FirebaseService.onLeaderChanged(this.roomId, (leader) => {
-      if (leader && leader.userId !== this.userId) {
-        this.currentLeader = leader;
-        this.isLeader = false;
-        this.eventHandler.onLeaderChanged(leader);
-      } else if (!leader) {
-        // Leader disconnected
-        this.currentLeader = null;
-        this.handleLeaderDisconnect();
-      }
-    });
+    this.unsubscribeLeaderChanges = FirebaseService.onLeaderChanged(
+      this.roomId,
+      (leader) => {
+        if (leader && leader.userId !== this.userId) {
+          this.currentLeader = leader;
+          this.isLeader = false;
+          this.eventHandler.onLeaderChanged(leader);
+        } else if (!leader) {
+          // Leader disconnected
+          this.currentLeader = null;
+          this.handleLeaderDisconnect();
+        }
+      },
+    );
   }
 
   public async startElection(): Promise<void> {
@@ -66,6 +71,12 @@ export class LeadershipService {
     this.electionInProgress = true;
     try {
       const peers = await FirebaseService.getAllPeersInRoom(this.roomId);
+
+      if (peers.length === 0) {
+        this.isLeader = false;
+        this.currentLeader = null;
+        return;
+      }
 
       // Find the peer with the earliest join time
       const earliestPeer = peers.reduce((earliest, current) => {
@@ -124,9 +135,25 @@ export class LeadershipService {
     this.eventHandler.onLeaderChanged(null);
 
     // Start new election after a short delay
-    setTimeout(() => {
+    if (this.reElectionTimeout) {
+      clearTimeout(this.reElectionTimeout);
+    }
+
+    this.reElectionTimeout = setTimeout(() => {
       this.startElection();
     }, 1000);
+  }
+
+  public cleanup(): void {
+    if (this.unsubscribeLeaderChanges) {
+      this.unsubscribeLeaderChanges();
+      this.unsubscribeLeaderChanges = null;
+    }
+
+    if (this.reElectionTimeout) {
+      clearTimeout(this.reElectionTimeout);
+      this.reElectionTimeout = null;
+    }
   }
 
   public getIsLeader(): boolean {

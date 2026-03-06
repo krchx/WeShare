@@ -32,6 +32,7 @@ export class RoomManager
 {
   private roomId: string;
   private userId: string;
+  private peerId: string;
   private peer: Peer;
   private eventHandler: RoomEventHandler;
 
@@ -44,7 +45,12 @@ export class RoomManager
 
   // State
   private connectedPeers: Set<string> = new Set();
+  private knownRemotePeerIds: Set<string> = new Set();
   private isInitialized: boolean = false;
+  private peerIdByUserId: Map<string, string> = new Map();
+  private userIdByPeerId: Map<string, string> = new Map();
+  private unsubscribePeerJoined: (() => void) | null = null;
+  private unsubscribePeerLeft: (() => void) | null = null;
   private getText: () => string;
   private getFiles: () => SharedFile[];
   private connectionStatusInterval: NodeJS.Timeout | null = null;
@@ -54,7 +60,7 @@ export class RoomManager
     roomId: string,
     getText: () => string,
     getFiles: () => SharedFile[],
-    eventHandler: RoomEventHandler
+    eventHandler: RoomEventHandler,
   ) {
     this.roomId = roomId;
     this.eventHandler = eventHandler;
@@ -63,42 +69,43 @@ export class RoomManager
 
     // Generate unique user ID for this session
     this.userId = generateUserId();
+    this.peerId = `${roomId}-${this.userId}`;
+    this.peerIdByUserId.set(this.userId, this.peerId);
+    this.userIdByPeerId.set(this.peerId, this.userId);
 
     try {
       // Initialize peer
-      this.peer = new Peer(`${roomId}-${this.userId}`, {
+      this.peer = new Peer(this.peerId, {
         debug: 2,
         config: {
-          iceServers: [
-            { urls: "stun:stun.l.google.com:19302" },
-            { urls: "stun:stun1.l.google.com:19302" },
-            { urls: "stun:stun2.l.google.com:19302" },
-          ],
+          iceServers: RoomManager.buildIceServers(),
         },
       });
     } catch {
       throw new WebRTCError(
-        "Failed to initialize PeerJS. Please check your network connection or try again later.",
-        ERROR_CODES.WEBRTC_CONNECTION_FAILED
+        "Failed to initialize WebRTC transport. Please check your network connection or try again later.",
+        ERROR_CODES.WEBRTC_CONNECTION_FAILED,
       );
     }
 
     // Initialize services
-    this.connectionService = new ConnectionService(this.peer, this);
+    this.connectionService = new ConnectionService(this.peer, this, {
+      shouldInitiateConnection: (remotePeerId) => this.peerId < remotePeerId,
+    });
     this.messageService = new MessageService();
     this.fileService = new FileService(this.userId, this);
     this.leadershipService = new LeadershipService(
       this.userId,
-      this.peer.id,
+      this.peerId,
       this.roomId,
       Date.now(),
-      this
+      this,
     );
     this.stateService = new StateService(
       this.userId,
       getText,
       this.getFilesFromService.bind(this),
-      this
+      this,
     );
 
     this.setupMessageHandlers();
@@ -119,7 +126,7 @@ export class RoomManager
     // Register message handlers for different message types
     this.messageService.registerHandler("text-update", (message) => {
       this.stateService.handleTextUpdate(
-        message as Extract<PeerMessage, { type: "text-update" }>
+        message as Extract<PeerMessage, { type: "text-update" }>,
       );
     });
 
@@ -137,12 +144,12 @@ export class RoomManager
         { type: "file-request" }
       >;
       const fileData = await this.fileService.handleFileRequest(
-        requestMessage.data.id
+        requestMessage.data.id,
       );
       if (fileData) {
         const responseMessage = this.fileService.createFileResponseMessage(
           requestMessage.data.id,
-          fileData
+          fileData,
         );
         const peerId = this.getPeerIdFromUserId(message.sender);
         if (peerId) {
@@ -158,7 +165,7 @@ export class RoomManager
       >;
       this.fileService.handleFileResponse(
         responseMessage.data.fileId,
-        responseMessage.data.fileData
+        responseMessage.data.fileData,
       );
     });
 
@@ -172,21 +179,49 @@ export class RoomManager
 
     this.messageService.registerHandler("room-state-request", (message) => {
       this.stateService.handleStateRequest(
-        message as Extract<PeerMessage, { type: "room-state-request" }>
+        message as Extract<PeerMessage, { type: "room-state-request" }>,
       );
     });
 
     this.messageService.registerHandler("room-state-response", (message) => {
       this.stateService.handleStateResponse(
-        message as Extract<PeerMessage, { type: "room-state-response" }>
+        message as Extract<PeerMessage, { type: "room-state-response" }>,
       );
     });
   }
 
   private async joinRoom(): Promise<void> {
     try {
+      this.unsubscribePeerJoined = FirebaseService.onPeerJoined(
+        this.roomId,
+        (peerId, userId) => {
+          this.peerIdByUserId.set(userId, peerId);
+          this.userIdByPeerId.set(peerId, userId);
+
+          if (peerId !== this.peerId) {
+            this.knownRemotePeerIds.add(peerId);
+            this.connectionService.connectToPeer(peerId);
+          }
+        },
+      );
+
+      this.unsubscribePeerLeft = FirebaseService.onPeerLeft(
+        this.roomId,
+        (peerId, userId) => {
+          this.peerIdByUserId.delete(userId);
+          this.userIdByPeerId.delete(peerId);
+          this.knownRemotePeerIds.delete(peerId);
+          this.connectedPeers.delete(peerId);
+          this.connectionService.forgetPeer(peerId);
+          this.eventHandler.onUserLeft(userId);
+          this.eventHandler.onConnectionStatusChanged(
+            this.getConnectionStatus(),
+          );
+        },
+      );
+
       const peerData = {
-        peerId: this.peer.id,
+        peerId: this.peerId,
         joinedAt: Date.now(),
         isLeader: false,
       };
@@ -194,41 +229,18 @@ export class RoomManager
       await FirebaseService.registerPeerInRoom(
         this.roomId,
         this.userId,
-        peerData
+        peerData,
       );
       await this.leadershipService.initialize();
 
       const leader = this.leadershipService.getCurrentLeader();
 
-      // First connect to the leader if one exists
-      if (leader && leader.peerId !== this.peer.id) {
-        this.connectionService.connectToPeer(leader.peerId);
-      }
-      // Then connect to all other peers
-      const existingPeers = await FirebaseService.getAllPeersInRoom(
-        this.roomId
-      );
-      existingPeers.forEach((peer) => {
-        if (
-          peer.peerData.peerId !== this.peer.id &&
-          peer.peerData.peerId !== leader?.peerId
-        ) {
-          this.connectionService.connectToPeer(peer.peerData.peerId);
-        }
-      });
-
-      // Set up listener for future peers
-      FirebaseService.onPeerJoined(this.roomId, (peerId) => {
-        if (peerId !== this.peer.id) {
-          this.connectionService.connectToPeer(peerId);
-        }
-      });
-
-      if (this.peer.id === leader?.peerId) {
+      if (this.peerId === leader?.peerId) {
         this.eventHandler.onTextUpdated(this.getText());
       }
 
       this.isInitialized = true;
+      this.eventHandler.onConnectionStatusChanged(this.getConnectionStatus());
       this.eventHandler.onConnected();
     } catch (error) {
       this.eventHandler.onError(error as Error);
@@ -238,6 +250,7 @@ export class RoomManager
   // ConnectionEventHandler implementation
   public onConnectionOpen(peerId: string): void {
     this.connectedPeers.add(peerId);
+    this.eventHandler.onConnectionStatusChanged(this.getConnectionStatus());
 
     // Send introduction message
     const introMessage: PeerMessage = {
@@ -250,7 +263,7 @@ export class RoomManager
     // Request room state if we are not the leader and don't have the state
     if (!this.leadershipService.getIsLeader()) {
       const leader = this.leadershipService.getCurrentLeader();
-      if (leader && leader.peerId !== this.peer.id) {
+      if (leader && leader.peerId !== this.peerId) {
         const stateRequest = this.stateService.createStateRequestMessage();
         this.connectionService.sendToConnection(leader.peerId, stateRequest);
       }
@@ -259,18 +272,15 @@ export class RoomManager
 
   public onConnectionClose(peerId: string): void {
     this.connectedPeers.delete(peerId);
-    const userId = this.getUserIdFromPeerId(peerId);
-    if (userId) {
-      this.eventHandler.onUserLeft(userId);
-    }
+
+    this.eventHandler.onConnectionStatusChanged(this.getConnectionStatus());
   }
 
   public onConnectionError(peerId: string, error: Error): void {
     this.connectedPeers.delete(peerId);
-    throw new WebRTCError(
-      `Connection error with peer ${peerId}: ${error.message}`,
-      ERROR_CODES.WEBRTC_CONNECTION_ERROR
-    );
+    this.eventHandler.onConnectionStatusChanged(this.getConnectionStatus());
+
+    void this.handleConnectionError(peerId, error);
   }
 
   public onMessage(message: PeerMessage): void {
@@ -312,7 +322,7 @@ export class RoomManager
 
   public onLeaderChanged(leaderData: RoomLeaderData | null): void {
     this.eventHandler.onLeaderChanged(leaderData);
-    if (leaderData && leaderData.peerId !== this.peer.id) {
+    if (leaderData && leaderData.peerId !== this.peerId) {
       if (!this.connectionService.isConnectedTo(leaderData.peerId)) {
         this.connectionService.connectToPeer(leaderData.peerId);
       }
@@ -344,7 +354,7 @@ export class RoomManager
       const existingFiles = this.fileService.getAllSharedFiles();
       existingFiles.forEach((file) => {
         const metadataMessage = this.fileService.createFileMetadataMessage(
-          file.id
+          file.id,
         );
         if (metadataMessage) {
           this.connectionService.sendToConnection(peerId, metadataMessage);
@@ -370,7 +380,7 @@ export class RoomManager
         errors.push(
           error instanceof Error
             ? error.message
-            : `Failed to add file: ${file.name}`
+            : `Failed to add file: ${file.name}`,
         );
       }
     }
@@ -426,10 +436,40 @@ export class RoomManager
       this.textLoadingTimeout = null;
     }
 
+    if (this.unsubscribePeerJoined) {
+      this.unsubscribePeerJoined();
+      this.unsubscribePeerJoined = null;
+    }
+
+    if (this.unsubscribePeerLeft) {
+      this.unsubscribePeerLeft();
+      this.unsubscribePeerLeft = null;
+    }
+
     this.connectionService.disconnect();
+    this.leadershipService.cleanup();
     this.messageService.clear();
     this.fileService.clear();
+
+    void this.cleanupRoomPresence();
+
     this.peer.destroy();
+    this.eventHandler.onConnectionStatusChanged(false);
+    this.eventHandler.onDisconnected();
+  }
+
+  private async cleanupRoomPresence(): Promise<void> {
+    try {
+      await FirebaseService.removePeerFromRoom(this.roomId, this.userId);
+
+      if (this.leadershipService.getCurrentLeader()?.userId === this.userId) {
+        await FirebaseService.removeRoomLeader(this.roomId);
+      } else {
+        await FirebaseService.deleteRoomIfEmpty(this.roomId);
+      }
+    } catch {
+      // Firebase onDisconnect still handles the common unload path.
+    }
   }
 
   // Helper methods
@@ -438,12 +478,99 @@ export class RoomManager
   }
 
   private getPeerIdFromUserId(userId: string): string | null {
-    const connections = this.connectionService.getConnections();
-    return connections.find((peerId) => peerId.endsWith(`-${userId}`)) || null;
+    return this.peerIdByUserId.get(userId) ?? null;
   }
 
   private getUserIdFromPeerId(peerId: string): string | null {
-    const lastDashIndex = peerId.lastIndexOf("-");
-    return lastDashIndex > 0 ? peerId.substring(lastDashIndex + 1) : null;
+    return this.userIdByPeerId.get(peerId) ?? null;
+  }
+
+  private getConnectionStatus(): boolean {
+    if (!this.isInitialized) {
+      return false;
+    }
+
+    if (this.knownRemotePeerIds.size === 0) {
+      return true;
+    }
+
+    return this.connectedPeers.size > 0;
+  }
+
+  private async handleConnectionError(
+    peerId: string,
+    error: Error,
+  ): Promise<void> {
+    const userId = this.getUserIdFromPeerId(peerId);
+
+    if (await this.shouldSuppressConnectionError(peerId, userId, error)) {
+      return;
+    }
+
+    this.eventHandler.onError(
+      new WebRTCError(
+        `Connection error with peer ${peerId}: ${error.message}`,
+        ERROR_CODES.WEBRTC_CONNECTION_ERROR,
+      ),
+    );
+  }
+
+  private async shouldSuppressConnectionError(
+    peerId: string,
+    userId: string | null,
+    error: Error,
+  ): Promise<boolean> {
+    const normalizedMessage = error.message.toLowerCase();
+    const looksLikePeerUnavailableError =
+      normalizedMessage.includes("could not connect to peer") ||
+      normalizedMessage.includes("peer-unavailable") ||
+      normalizedMessage.includes("not found") ||
+      normalizedMessage.includes("disconnected");
+
+    if (!looksLikePeerUnavailableError) {
+      return false;
+    }
+
+    if (!this.knownRemotePeerIds.has(peerId) || !userId) {
+      return true;
+    }
+
+    try {
+      const peerData = await FirebaseService.getPeerInRoom(this.roomId, userId);
+      const peerStillPresent = peerData?.peerId === peerId;
+
+      if (!peerStillPresent) {
+        this.peerIdByUserId.delete(userId);
+        this.userIdByPeerId.delete(peerId);
+        this.knownRemotePeerIds.delete(peerId);
+        this.connectionService.forgetPeer(peerId);
+        return true;
+      }
+    } catch {
+      return false;
+    }
+
+    return false;
+  }
+
+  private static buildIceServers(): RTCIceServer[] {
+    const defaultStunServers = [
+      "stun:stun.l.google.com:19302",
+      "stun:stun1.l.google.com:19302",
+      "stun:stun2.l.google.com:19302",
+    ];
+
+    const configuredStunServers = (process.env.NEXT_PUBLIC_STUN_URLS ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    const stunServers = [
+      ...new Set([...defaultStunServers, ...configuredStunServers]),
+    ];
+
+    const iceServers: RTCIceServer[] = stunServers.map((urls) => ({ urls }));
+
+    return iceServers;
   }
 }
