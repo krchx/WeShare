@@ -17,13 +17,13 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-5 py-8 sm:px-10 sm:py-12 relative overflow-hidden selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black">
+    <main className="min-h-screen flex flex-col items-center justify-start px-5 py-8 sm:px-10 sm:py-12 sm:justify-center relative overflow-hidden selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-24 left-[-4rem] h-72 w-72 rounded-full bg-white/30 blur-3xl dark:bg-stone-200/5" />
         <div className="absolute bottom-0 right-[-5rem] h-80 w-80 rounded-full bg-amber-200/20 blur-3xl dark:bg-amber-100/5" />
       </div>
 
-      <div className="absolute top-5 right-5 flex items-center gap-3 z-10 rounded-full px-2 py-2 paper-card sm:top-6 sm:right-6">
+      <div className="relative self-end mb-8 flex items-center gap-3 z-20 rounded-full px-2 py-2 paper-card sm:absolute sm:top-6 sm:right-6 sm:mb-0">
         <ThemeToggle />
         <a
           href="https://github.com/krchx/weshare"

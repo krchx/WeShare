@@ -1,5 +1,4 @@
 import React, { useRef } from "react";
-import { CheckCircle2, LoaderCircle } from "lucide-react";
 
 interface TextEditorProps {
   text: string;
@@ -14,6 +13,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   disabled = false,
   isLoading = false,
 }) => {
+  const loadingPulseColor = "rgb(180 83 9)";
   const lineCount = Math.max(1, text.split("\n").length);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
@@ -24,44 +24,46 @@ export const TextEditor: React.FC<TextEditorProps> = ({
     }
   };
 
-  return (
-    <div className="paper-matte flex-1 flex flex-col h-full overflow-hidden relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-white/12 via-transparent to-amber-100/10 dark:from-white/[0.02] dark:to-transparent pointer-events-none"></div>
-      <div className="absolute top-0 bottom-0 left-[50px] w-px bg-red-400/24 dark:bg-red-500/20 z-0 pointer-events-none"></div>
-      <div className="absolute top-0 bottom-0 left-[54px] w-px bg-red-400/24 dark:bg-red-500/20 z-0 pointer-events-none"></div>
+  const getStatusOutline = () => {
+    if (isLoading) {
+      return (
+        <div
+          className="absolute inset-[-2px] rounded-[inherit] overflow-hidden pointer-events-none"
+          style={{ zIndex: -1 }}
+        >
+          <div
+            className="absolute w-[200%] h-[200%] top-1/2 left-1/2 -translate-x-[50%] -translate-y-[50%] animate-[spin_3s_linear_infinite]"
+            style={{
+              background: `conic-gradient(from 0deg, transparent 75%, ${loadingPulseColor})`,
+            }}
+          />
+        </div>
+      );
+    }
+    return null;
+  };
 
-      <div className="px-6 pt-5 pb-4 grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center z-10 border-b border-dashed border-[var(--line)] dark:border-[var(--line-dark)]">
-        <div className="hidden sm:block" />
-        <h1 className="text-2xl font-serif font-black flex items-center justify-center gap-2 text-center text-[var(--ink)] dark:text-[var(--ink-dark)] sm:col-start-2 sm:justify-self-center">
+  return (
+    <div
+      className={`flex-1 flex flex-col h-full overflow-hidden relative transition-all duration-500 isolation-auto rounded-[32px] border border-transparent shadow-[var(--shadow-elevated)] dark:shadow-[var(--shadow-elevated-dark)]`}
+    >
+      {getStatusOutline()}
+      <div className="absolute inset-[1px] bg-[var(--paper)] dark:bg-[var(--paper-dark)] rounded-[calc(inherit-1px)] z-0" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/12 via-transparent to-amber-100/10 dark:from-white/[0.02] dark:to-transparent pointer-events-none z-0 rounded-[32px]"></div>
+      <div className="absolute inset-0 border border-[var(--line)] dark:border-[var(--line-dark)] rounded-[32px] pointer-events-none z-10" />
+      <div className="absolute inset-x-0 top-0 bottom-0 left-[54px] w-px bg-red-400/24 dark:bg-red-500/20 z-0 pointer-events-none rounded-l-[31px]"></div>
+
+      <div className="px-6 pt-5 pb-4 flex items-center justify-center z-10 border-b border-dashed border-[var(--line)] dark:border-[var(--line-dark)]">
+        <h1 className="text-2xl font-serif font-black flex items-center justify-center gap-2 text-center text-[var(--ink)] dark:text-[var(--ink-dark)]">
           Shared Workspace
         </h1>
-        <div className="flex justify-center sm:col-start-3 sm:justify-self-end">
-          {isLoading ? (
-            <span className="inline-flex items-center gap-2 rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-xs font-medium tracking-[0.08em] text-sky-800 dark:text-sky-300 uppercase">
-              <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
-              Syncing
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-600/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium tracking-[0.08em] text-emerald-800 dark:text-emerald-300 uppercase">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Live Sync
-            </span>
-          )}
-        </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden relative z-10">
-        {isLoading && (
-          <div className="absolute inset-0 bg-[var(--paper)]/60 dark:bg-[var(--paper-dark)]/60 backdrop-blur-[2px] z-20 flex items-center justify-center">
-            <div className="paper-card p-4 flex items-center gap-3">
-              <LoaderCircle className="h-5 w-5 animate-spin text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)]" />
-              <span className="text-sm font-mono font-bold">
-                Syncing state...
-              </span>
-            </div>
-          </div>
-        )}
-
+      <div
+        className={`flex flex-1 overflow-hidden relative z-10 transition-all duration-300 ${
+          isLoading ? "blur-[1.5px] opacity-85" : "blur-0 opacity-100"
+        }`}
+      >
         <div
           ref={lineNumbersRef}
           className="flex flex-col items-end pt-[2px] pb-4 px-2 w-[50px] shrink-0 text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] font-mono text-sm select-none overflow-hidden"
@@ -87,6 +89,10 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           spellCheck="false"
         />
       </div>
+
+      {isLoading && (
+        <div className="absolute inset-0 rounded-[32px] bg-amber-700/5 dark:bg-amber-200/5 pointer-events-none z-10" />
+      )}
 
       <div className="px-4 py-2 text-xs text-right font-mono text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] border-t border-dashed border-[var(--line)] dark:border-[var(--line-dark)] z-10">
         Lines: <span className="font-bold">{lineCount}</span>

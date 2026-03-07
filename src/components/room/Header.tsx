@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { ShareRoomModal } from "./ShareRoomModal";
 import { FaGithub } from "react-icons/fa";
 import { ThemeToggle } from "../ui/theme-toggle";
-import { CheckCircle2, LoaderCircle } from "lucide-react";
 
 interface HeaderProps {
   roomId: string;
@@ -21,6 +20,26 @@ export const Header: React.FC<HeaderProps> = ({
     setIsShareModalOpen(true);
   };
 
+  const getStatusOutline = () => {
+    if (!connected || isLoading) {
+      const color = !connected ? "rgb(245 158 11)" : "rgb(14 165 233)"; // amber-500 or sky-500
+      return (
+        <div
+          className="absolute inset-[-2px] rounded-[inherit] overflow-hidden pointer-events-none"
+          style={{ zIndex: -1 }}
+        >
+          <div
+            className="absolute w-[200%] h-[200%] top-1/2 left-1/2 -translate-x-[50%] -translate-y-[50%] animate-[spin_3s_linear_infinite]"
+            style={{
+              background: `conic-gradient(from 0deg, transparent 75%, ${color})`,
+            }}
+          />
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="px-3 pt-3 sm:px-4 sm:pt-4 z-20 relative">
       <div className="paper-matte px-4 py-3 sm:px-6 sm:py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -30,26 +49,13 @@ export const Header: React.FC<HeaderProps> = ({
           </h1>
         </div>
 
-        <div className="flex items-start lg:items-center flex-col">
-          <span className="font-mono font-bold text-sm md:text-lg text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] border border-[var(--line)] dark:border-[var(--line-dark)] px-4 py-2 rounded-full bg-white/40 dark:bg-white/[0.04] backdrop-blur-md">
+        <div className="relative inline-flex self-start lg:self-auto rounded-full isolation-auto">
+          {getStatusOutline()}
+          <span
+            className={`inline-flex font-mono font-bold text-sm md:text-lg text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] border px-4 py-2 rounded-full relative z-0 transition-all duration-500 overflow-hidden ${!connected || isLoading ? "border-transparent bg-[var(--paper)] dark:bg-[var(--paper-dark)]" : "border-[var(--line)] dark:border-[var(--line-dark)] bg-white/40 dark:bg-white/[0.04] backdrop-blur-md"}`}
+          >
             ID: {roomId}
           </span>
-          {connected && !isLoading ? (
-            <span className="mt-2 inline-flex items-center gap-2 rounded-full border border-emerald-600/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-emerald-800 dark:text-emerald-300">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Connected
-            </span>
-          ) : !connected ? (
-            <span className="mt-2 inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-amber-800 dark:text-amber-300">
-              <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
-              Connecting
-            </span>
-          ) : (
-            <span className="mt-2 inline-flex items-center gap-2 rounded-full border border-[var(--line)] dark:border-[var(--line-dark)] bg-white/35 dark:bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)]">
-              <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
-              Syncing
-            </span>
-          )}
         </div>
 
         <div className="flex items-center gap-3 self-end lg:self-auto">

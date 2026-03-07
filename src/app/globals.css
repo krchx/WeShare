@@ -9,6 +9,15 @@
   --color-ink-dark: var(--ink-dark);
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 :root {
   --paper: #f5f0e6;
   --paper-elevated: rgba(255, 250, 242, 0.78);
