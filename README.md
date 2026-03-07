@@ -1,7 +1,7 @@
-# WeShare 🌟
+# ShareVia 🌟
 
-Welcome to **WeShare** – the ultimate real-time file and code sharing platform! 🚀  
-With **WeShare**, you can instantly share files and collaborate on code with your peers using secure peer-to-peer technology. No sign-ups, no hassle – just seamless collaboration.
+Welcome to **ShareVia** – the ultimate real-time file and code sharing platform! 🚀  
+With **ShareVia**, you can instantly share files and collaborate on code with your peers using secure peer-to-peer technology. No sign-ups, no hassle – just seamless collaboration.
 
 ## ✨ Features
 
@@ -16,15 +16,14 @@ With **WeShare**, you can instantly share files and collaborate on code with you
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/krchx/weshare.git
-   cd weshare
+   git clone https://github.com/krchx/sharevia.git
+   cd sharevia
    ```
 2. Install dependencies:
    ```bash
    npm install
    ```
 3. Set up Firebase:
-
    - Create a Firebase project at [Firebase Console](https://console.firebase.google.com/).
    - Go to **Project Settings** and find your Firebase configuration.
    - Create a `.env.local` file in the root of the project and add the following variables:
@@ -68,9 +67,9 @@ Here’s how you can get involved:
 
 ## ⭐ Show Your Support
 
-If you find **WeShare** helpful, please give us a ⭐ on GitHub!  
+If you find **ShareVia** helpful, please give us a ⭐ on GitHub!  
 Your support helps us grow and improve this project for everyone.
 
 ---
 
-Thank you for being a part of the **WeShare** community! Together, we can make collaboration effortless and enjoyable. 🌍
+Thank you for being a part of the **ShareVia** community! Together, we can make collaboration effortless and enjoyable. 🌍

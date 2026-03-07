@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { ErrorProvider } from "@/context/ErrorContext";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { siteConfig } from "@/lib/site";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,10 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://weshare-live.vercel.app"),
-  title: "WeShare | Real-time File & code Sharing Platform",
-  description:
-    "Instantly share files and collaborate on code in real-time using peer-to-peer technology. No sign-up required, just create a room and share the link.",
+  metadataBase: new URL(siteConfig.url),
+  title: `${siteConfig.name} | Real-time File & Code Sharing Platform`,
+  description: siteConfig.description,
   keywords: [
     "file sharing",
     "code collaboration",
@@ -30,23 +30,28 @@ export const metadata: Metadata = {
     "no sign-up",
     "instant collaboration",
   ],
-  authors: [{ name: "WeShare Team" }],
+  authors: [{ name: siteConfig.teamName }],
   category: "Productivity",
-  applicationName: "WeShare",
+  applicationName: siteConfig.name,
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://weshare-live.vercel.app/",
-    title: "WeShare | Secure Peer-to-Peer File & code Sharing",
+    url: siteConfig.url,
+    title: `${siteConfig.name} | Secure Peer-to-Peer File & Code Sharing`,
     description:
       "Share files and collaborate on code instantly without uploading to servers. Private, secure, and no sign-up required.",
-    siteName: "WeShare",
+    siteName: siteConfig.name,
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "WeShare Preview",
+        alt: `${siteConfig.name} Preview`,
       },
     ],
   },
@@ -60,8 +65,8 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  creator: "WeShare Team",
-  publisher: "WeShare",
+  creator: siteConfig.teamName,
+  publisher: siteConfig.name,
   alternates: {
     canonical: "/",
     languages: {

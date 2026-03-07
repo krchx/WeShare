@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import JoinRoomForm from "@/components/home/JoinRoomForm";
 import RoomCreationOptions from "@/components/home/RoomCreationOptions";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { siteConfig } from "@/lib/site";
 import { FaGithub } from "react-icons/fa";
 
 export default function Home() {
@@ -26,7 +27,7 @@ export default function Home() {
       <div className="relative self-end mb-8 flex items-center gap-3 z-20 rounded-full px-2 py-2 paper-card sm:absolute sm:top-6 sm:right-6 sm:mb-0">
         <ThemeToggle />
         <a
-          href="https://github.com/krchx/weshare"
+          href={siteConfig.repoUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="h-9 w-9 flex items-center justify-center rounded-full text-[var(--ink-soft)] hover:text-[var(--ink)] dark:text-[var(--ink-dark-soft)] dark:hover:text-[var(--ink-dark)] transition-colors"
@@ -42,11 +43,10 @@ export default function Home() {
             Soft matte workspace
           </div>
           <h1 className="text-5xl md:text-7xl font-serif font-black tracking-[-0.05em] mb-4 text-[var(--ink)] dark:text-[var(--ink-dark)]">
-            WeShare
+            {siteConfig.name}
           </h1>
           <p className="text-base md:text-xl font-mono text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] max-w-2xl mx-auto leading-relaxed">
-            Real-time peer-to-peer file sharing and collaborative text editing.
-            Pure ephemeral connection.
+            {siteConfig.shortDescription} Pure ephemeral connection.
           </p>
         </div>
 

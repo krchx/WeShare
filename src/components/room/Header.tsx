@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ShareRoomModal } from "./ShareRoomModal";
 import { FaGithub } from "react-icons/fa";
 import { ThemeToggle } from "../ui/theme-toggle";
+import { siteConfig } from "@/lib/site";
 
 interface HeaderProps {
   roomId: string;
@@ -45,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="paper-matte px-4 py-3 sm:px-6 sm:py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-serif font-black tracking-tight text-[var(--ink)] dark:text-[var(--ink-dark)]">
-            WeShare
+            {siteConfig.name}
           </h1>
         </div>
 
@@ -61,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-3 self-end lg:self-auto">
           <ThemeToggle />
           <a
-            href="https://github.com/krchx/weshare"
+            href={siteConfig.repoUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="paper-btn h-10 w-10 !p-0 flex items-center justify-center text-[var(--ink-soft)] hover:text-[var(--ink)] dark:text-[var(--ink-dark-soft)] dark:hover:text-[var(--ink-dark)] transition-colors"
@@ -84,7 +85,7 @@ export const Header: React.FC<HeaderProps> = ({
         roomUrl={
           typeof window !== "undefined"
             ? window.location.href
-            : `https://weshare-live.vercel.app/${roomId}`
+            : `${siteConfig.url}/${roomId}`
         }
       />
     </div>
