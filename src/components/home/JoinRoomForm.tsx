@@ -42,21 +42,21 @@ export default function JoinRoomForm({ onJoinRoom }: JoinRoomFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="mb-6">
-      <div className="relative">
+      <div className="relative flex flex-col sm:flex-row gap-4">
         <input
           type="text"
-          placeholder="Enter room ID"
+          placeholder="Enter secret room ID..."
           value={roomId}
           onChange={(e) => {
             setRoomId(e.target.value);
             setError("");
           }}
-          className="w-full px-4 py-3 bg-gray-50 rounded-lg border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+          className="paper-input flex-1 text-base sm:text-lg mb-2 sm:mb-0"
         />
         <button
           type="submit"
           disabled={!roomId.trim() || isChecking}
-          className={`absolute right-2 top-2 px-4 py-1 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition-colors flex items-center
+          className={`paper-btn flex items-center justify-center min-w-[140px] px-5 py-3 text-sm sm:text-base
             ${
               !roomId.trim() || isChecking
                 ? "opacity-50 cursor-not-allowed"
@@ -65,19 +65,22 @@ export default function JoinRoomForm({ onJoinRoom }: JoinRoomFormProps) {
         >
           {isChecking ? (
             <>
-              <AiOutlineLoading3Quarters className="animate-spin mr-1 h-4 w-4" />
-              Checking...
+              <AiOutlineLoading3Quarters className="animate-spin mr-2 h-4 w-4" />
+              Checking
             </>
           ) : (
             <>
-              <FiLogIn className="mr-1 h-4 w-4" />
-              Join
+              <FiLogIn className="mr-2 h-4 w-4" />
+              Join Room
             </>
           )}
         </button>
       </div>
       {error && roomId.trim() && (
-        <p className="mt-1 text-sm text-red-500">{error}</p>
+        <p className="mt-3 text-sm text-red-500 font-mono flex items-center gap-1 px-1">
+          <span className="w-1 h-1 rounded-full bg-red-500 inline-block"></span>
+          {error}
+        </p>
       )}
     </form>
   );

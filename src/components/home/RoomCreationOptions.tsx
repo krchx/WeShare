@@ -13,27 +13,27 @@ export default function RoomCreationOptions({
   const [isCustomRoom, setIsCustomRoom] = useState(false);
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center justify-center space-x-4 mb-4">
+    <div className="mb-2">
+      <div className="inline-flex items-center gap-2 mb-6 p-1 rounded-full border border-[var(--line)] dark:border-[var(--line-dark)] bg-white/30 dark:bg-white/[0.04]">
         <button
           onClick={() => setIsCustomRoom(false)}
-          className={`px-4 py-2 rounded-md transition-all ${
+          className={`px-4 py-2 rounded-full transition-all font-serif text-sm sm:text-base ${
             !isCustomRoom
-              ? "bg-indigo-100 text-indigo-700 font-medium"
-              : "bg-gray-100 text-gray-600"
+              ? "bg-black/90 text-white dark:bg-white dark:text-black shadow-sm"
+              : "text-[var(--ink-soft)] hover:text-[var(--ink)] dark:text-[var(--ink-dark-soft)] dark:hover:text-[var(--ink-dark)]"
           }`}
         >
-          Random Room
+          Random ID
         </button>
         <button
           onClick={() => setIsCustomRoom(true)}
-          className={`px-4 py-2 rounded-md transition-all ${
+          className={`px-4 py-2 rounded-full transition-all font-serif text-sm sm:text-base ${
             isCustomRoom
-              ? "bg-indigo-100 text-indigo-700 font-medium"
-              : "bg-gray-100 text-gray-600"
+              ? "bg-black/90 text-white dark:bg-white dark:text-black shadow-sm"
+              : "text-[var(--ink-soft)] hover:text-[var(--ink)] dark:text-[var(--ink-dark-soft)] dark:hover:text-[var(--ink-dark)]"
           }`}
         >
-          Custom Room
+          Custom ID
         </button>
       </div>
 

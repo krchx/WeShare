@@ -54,29 +54,34 @@ export default function RandomRoomOption({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.2 }}
-      className="mb-4"
+      className="mb-4 pt-2"
     >
-      <div className="text-center text-sm text-gray-600 mb-4">
-        A unique 5-character room ID will be generated for you
+      <div className="text-sm text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] font-mono mb-4 px-1 leading-relaxed">
+        A unique 5-character ID will be generated
       </div>
 
-      {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
+      {error && (
+        <p className="text-sm text-red-500 mb-3 font-mono flex items-center gap-1 px-1">
+          <span className="w-1 h-1 rounded-full bg-red-500 inline-block"></span>
+          {error}
+        </p>
+      )}
 
       <button
         onClick={handleCreateRoom}
         disabled={isCreating}
-        className={`w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all flex items-center justify-center
+        className={`paper-btn w-full py-3 px-4 flex items-center justify-center
           ${isCreating ? "opacity-50 cursor-not-allowed" : "opacity-100"}`}
       >
         {isCreating ? (
           <>
             <AiOutlineLoading3Quarters className="animate-spin mr-2 h-5 w-5" />
-            Creating room...
+            Generating ID...
           </>
         ) : (
           <>
             <FiShuffle className="h-5 w-5 mr-2" />
-            Create Random Room
+            Generate Random Room
           </>
         )}
       </button>

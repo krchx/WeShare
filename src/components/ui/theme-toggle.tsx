@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
+import { FaMoon, FaSun } from "react-icons/fa";
 
 export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
@@ -13,15 +14,17 @@ export function ThemeToggle() {
   }, []);
 
   if (!mounted) {
-    return null;
+    return <div className="w-10 h-10 rounded-full"></div>;
   }
 
   return (
     <button
-      className="px-4 py-2 text-gray-900 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 transition-colors"
+      className="paper-btn w-10 h-10 flex items-center justify-center !p-0 text-[var(--ink-soft)] hover:text-[var(--ink)] dark:text-[var(--ink-dark-soft)] dark:hover:text-[var(--ink-dark)]"
       onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+      aria-label="Toggle Theme"
+      title="Toggle Theme"
     >
-      {theme === "light" ? "🌙 Dark" : "☀️ Light"}
+      {theme === "light" ? <FaMoon size={18} /> : <FaSun size={18} />}
     </button>
   );
 }

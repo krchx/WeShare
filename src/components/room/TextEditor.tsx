@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { FaSun, FaMoon } from "react-icons/fa";
+import React, { useRef } from "react";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { CheckCircle2, LoaderCircle } from "lucide-react";
 
 interface TextEditorProps {
   text: string;
@@ -15,104 +15,85 @@ export const TextEditor: React.FC<TextEditorProps> = ({
   disabled = false,
   isLoading = false,
 }) => {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const lineCount = Math.max(1, text.split("\n").length);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lineNumbersRef = useRef<HTMLDivElement>(null);
 
-  const toggleTheme = () => {
-    setIsDarkMode((prevMode) => !prevMode);
+  const handleScroll = () => {
+    if (textareaRef.current && lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop;
+    }
   };
 
-  const lineCount = text.split("\n").length;
-
   return (
-    <div
-      className={`flex-1 p-4 flex flex-col m-2 rounded-md backdrop-blur-xs ${
-        isDarkMode ? "bg-gray-700/60 text-white/80" : "bg-white text-black"
-      }`}
-    >
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold flex items-center">
-          Collaborative Editor
+    <div className="paper-matte flex-1 flex flex-col h-full overflow-hidden relative">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/12 via-transparent to-amber-100/10 dark:from-white/[0.02] dark:to-transparent pointer-events-none"></div>
+      <div className="absolute top-0 bottom-0 left-[50px] w-px bg-red-400/24 dark:bg-red-500/20 z-0 pointer-events-none"></div>
+      <div className="absolute top-0 bottom-0 left-[54px] w-px bg-red-400/24 dark:bg-red-500/20 z-0 pointer-events-none"></div>
+
+      <div className="px-6 pt-5 pb-4 grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center z-10 border-b border-dashed border-[var(--line)] dark:border-[var(--line-dark)]">
+        <div className="hidden sm:block" />
+        <h1 className="text-2xl font-serif font-black flex items-center justify-center gap-2 text-center text-[var(--ink)] dark:text-[var(--ink-dark)] sm:col-start-2 sm:justify-self-center">
+          Shared Workspace
           {isLoading && (
-            <AiOutlineLoading3Quarters className="ml-3 animate-spin text-yellow-500 h-6 w-6" />
+            <AiOutlineLoading3Quarters className="ml-3 animate-spin text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] h-5 w-5" />
           )}
         </h1>
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-full focus:outline-none ring-1 ring-gray-500 focus:ring-2 focus:ring-opacity-50 hover:cursor-pointer"
-          title="Toggle Theme"
-          aria-label="Toggle Theme"
-        >
-          {isDarkMode ? (
-            <FaSun className="text-white" />
+        <div className="flex justify-center sm:col-start-3 sm:justify-self-end">
+          {isLoading ? (
+            <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-medium tracking-[0.08em] text-amber-800 dark:text-amber-300 uppercase">
+              <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+              Syncing
+            </span>
           ) : (
-            <FaMoon className="text-gray-600" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-600/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium tracking-[0.08em] text-emerald-800 dark:text-emerald-300 uppercase">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Live Sync
+            </span>
           )}
-        </button>
+        </div>
       </div>
-      <p className="text-sm mb-4">
-        {isLoading ? (
-          <span className="text-yellow-500 flex items-center font-medium">
-            <AiOutlineLoading3Quarters className="mr-2 animate-spin h-4 w-4" />
-            Syncing with other users...
-          </span>
-        ) : (
-          "All changes will automatically sync with everyone in this room."
-        )}
-      </p>
 
-      {/* Editor container with focus styling */}
-      <div
-        className={`flex flex-1 rounded overflow-hidden relative ${
-          isDarkMode
-            ? "ring-1 ring-gray-600 focus-within:ring-2 focus-within:ring-gray-400"
-            : "ring-1 ring-gray-300 focus-within:ring-2 focus-within:ring-gray-600"
-        }`}
-      >
-        {/* Loading Overlay */}
+      <div className="flex flex-1 overflow-hidden relative z-10">
         {isLoading && (
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm z-10 flex items-center justify-center">
-            <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg p-4 flex items-center space-x-3 shadow-lg">
-              <AiOutlineLoading3Quarters className="h-6 w-6 animate-spin text-yellow-500" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Syncing with room...
+          <div className="absolute inset-0 bg-[var(--paper)]/60 dark:bg-[var(--paper-dark)]/60 backdrop-blur-[2px] z-20 flex items-center justify-center">
+            <div className="paper-card p-4 flex items-center gap-3">
+              <AiOutlineLoading3Quarters className="h-5 w-5 animate-spin text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)]" />
+              <span className="text-sm font-mono font-bold">
+                Syncing state...
               </span>
             </div>
           </div>
         )}
 
-        {/* Line Numbers */}
         <div
-          className={`flex flex-col items-end pr-2 pt-3 ${
-            isDarkMode
-              ? "bg-gray-800 text-gray-400"
-              : "bg-gray-100 text-gray-600"
-          }`}
-          style={{ minWidth: "40px" }}
+          ref={lineNumbersRef}
+          className="flex flex-col items-end pt-[2px] pb-4 px-2 w-[50px] shrink-0 text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] font-mono text-sm select-none overflow-hidden"
         >
-          {Array.from({ length: Math.max(1, lineCount) }, (_, i) => (
-            <span key={i} className="text-xs leading-6">
+          {Array.from({ length: lineCount }, (_, i) => (
+            <span
+              key={i}
+              className="h-[32px] flex items-center justify-end opacity-60 w-full text-xs"
+            >
               {i + 1}
             </span>
           ))}
         </div>
 
-        {/* Text Area - removing individual focus ring */}
         <textarea
-          className={`flex-1 p-3 resize-none outline-none opacity-90 ${
-            isDarkMode
-              ? "border-l border-gray-700 bg-gray-800 text-white"
-              : "border-l border-gray-300 bg-white text-black"
-          }`}
+          ref={textareaRef}
+          onScroll={handleScroll}
+          className="flex-1 pl-6 pr-5 py-0 resize-none outline-none font-mono text-[15px] bg-transparent text-[var(--ink)] dark:text-[var(--ink-dark)] paper-textarea z-10"
           value={text}
           onChange={onChange}
-          placeholder="Start typing here..."
-          rows={10}
+          placeholder="Start typing..."
           disabled={disabled}
+          spellCheck="false"
         />
       </div>
 
-      <div className="text-sm mt-2 text-right">
-        Line Count: <span className="font-bold">{lineCount}</span>
+      <div className="px-4 py-2 text-xs text-right font-mono text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] border-t border-dashed border-[var(--line)] dark:border-[var(--line-dark)] z-10">
+        Lines: <span className="font-bold">{lineCount}</span>
       </div>
     </div>
   );

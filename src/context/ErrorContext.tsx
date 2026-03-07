@@ -34,7 +34,13 @@ export const ErrorProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <ErrorContext.Provider value={{ showError, showSuccess }}>
       {children}
-      <Toaster richColors position="top-right" />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          className:
+            "!border !border-[var(--line)] dark:!border-[var(--line-dark)] !bg-[rgba(255,250,242,0.9)] dark:!bg-[rgba(31,27,23,0.92)] !text-[var(--ink)] dark:!text-[var(--ink-dark)] !rounded-[20px] !shadow-[0_14px_30px_rgba(82,67,50,0.16)] dark:!shadow-[0_16px_34px_rgba(0,0,0,0.35)] backdrop-blur-md",
+        }}
+      />
     </ErrorContext.Provider>
   );
 };

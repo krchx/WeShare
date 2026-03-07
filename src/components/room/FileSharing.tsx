@@ -1,7 +1,7 @@
 import React from "react";
 import { SharedFile } from "@/types/webrtc";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
-import { FiDownload } from "react-icons/fi";
+import { FiDownload, FiUploadCloud } from "react-icons/fi";
 import { handleError } from "@/lib/utils";
 
 type FileItem = File | SharedFile;
@@ -39,63 +39,89 @@ export const FileSharing: React.FC<FileSharingProps> = ({
       handleError(error, "Failed to download file");
     }
   };
+
   return (
-    <div className="p-4 flex flex-col">
-      <h2 className="text-xl font-bold mb-2">Files</h2>
-      <p className="text-sm text-gray-100 mb-3">
-        Files are shared directly with other users via WebRTC.
+    <div className="paper-matte p-6 flex flex-col h-full overflow-hidden">
+      <h2 className="text-xl font-serif font-black mb-1 text-[var(--ink)] dark:text-[var(--ink-dark)]">
+        Files
+      </h2>
+      <p className="text-xs font-mono text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] mb-6 uppercase tracking-[0.2em]">
+        P2P file transfer active
       </p>
 
-      <div className="mb-4">
-        <label className="block mb-2">
-          <span className="sr-only">Choose files</span>
+      <div className="mb-6">
+        <label className="paper-btn w-full text-center cursor-pointer flex items-center justify-center p-3 border-dashed border-2 border-[var(--line-strong)] dark:border-[var(--line-dark-strong)]">
+          <FiUploadCloud className="mr-2 h-5 w-5" />
+          <span className="font-sans text-sm">Select files to share</span>
           <input
             type="file"
-            className="block w-full text-sm text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-700 file:text-gray-200 hover:file:bg-blue-800 hover:cursor-pointer"
+            className="hidden"
             onChange={handleFileChange}
             multiple
           />
         </label>
       </div>
 
-      <div className="overflow-y-auto max-h-60">
-        <h3 className="font-semibold text-sm uppercase text-gray-800 mb-2">
-          Shared Files
+      <div className="overflow-y-auto flex-1 pr-2">
+        <h3 className="font-mono text-xs font-bold uppercase tracking-[0.22em] text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] mb-4 border-b border-[var(--line)] dark:border-[var(--line-dark)] pb-2">
+          Shared Items
         </h3>
 
         {localFiles.length === 0 && sharedFiles.length === 0 ? (
-          <p className="text-gray-300 italic text-sm">No files shared yet</p>
+          <div className="text-center py-8 opacity-70">
+            <p className="font-mono text-sm text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)]">
+              No files shared yet
+            </p>
+          </div>
         ) : (
-          <ul className="space-y-2">
-            {localFiles.map((file, index) => (
-              <li key={`local-${index}`} className="p-2 bg-blue-200 rounded">
-                <div className="text-sm font-medium">{file.name}</div>
-                <div className="text-xs text-gray-700 flex justify-between">
+          <ul className="space-y-3">
+            {localFiles.map((file) => (
+              <li
+                key={`local-${file.name}-${file.size}`}
+                className="paper-card p-4"
+              >
+                <div
+                  className="text-sm font-medium truncate mb-1 text-[var(--ink)] dark:text-[var(--ink-dark)]"
+                  title={file.name}
+                >
+                  {file.name}
+                </div>
+                <div className="text-xs font-mono text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] flex justify-between items-center">
                   <span>{(file.size / 1024).toFixed(1)} KB</span>
-                  <span>You shared this</span>
+                  <span className="text-green-600 dark:text-green-400">
+                    You
+                  </span>
                 </div>
               </li>
             ))}
 
             {sharedFiles.map((file, index) => (
-              <li key={`shared-${index}`} className="p-2 bg-green-50 rounded">
-                <div className="text-sm font-medium">{file.name}</div>
-                <div className="text-xs text-gray-500 flex justify-between">
+              <li
+                key={`shared-${index}`}
+                className="paper-card p-4 border-l-2 border-l-blue-500 dark:border-l-blue-400"
+              >
+                <div
+                  className="text-sm font-medium border-b border-[var(--line)] dark:border-[var(--line-dark)] pb-2 mb-2 truncate text-[var(--ink)] dark:text-[var(--ink-dark)]"
+                  title={file.name}
+                >
+                  {file.name}
+                </div>
+                <div className="text-xs font-mono text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] flex justify-between items-center mb-2">
                   <span>{(file.size / 1024).toFixed(1)} KB</span>
-                  <span>From {file.sender.substring(0, 6)}</span>
+                  <span>From: {file.sender.substring(0, 4)}</span>
                 </div>
                 {downloadingFiles.has(file.id) ? (
-                  <div className="mt-1 text-xs text-blue-600 flex items-center">
-                    <AiOutlineLoading3Quarters className="mr-1 animate-spin" />
+                  <div className="text-xs font-mono text-blue-600 dark:text-blue-400 flex items-center">
+                    <AiOutlineLoading3Quarters className="mr-1.5 animate-spin" />
                     Downloading...
                   </div>
                 ) : (
                   <button
                     onClick={() => handleDownload(file)}
-                    className="mt-1 text-xs text-blue-600 hover:text-blue-800 hover:cursor-pointer flex items-center"
+                    className="text-xs font-mono font-bold text-[var(--ink)] dark:text-[var(--ink-dark)] hover:text-blue-600 dark:hover:text-blue-400 hover:cursor-pointer flex items-center transition-colors"
                   >
-                    <FiDownload className="mr-1" />
-                    Download
+                    <FiDownload className="mr-1.5" />
+                    Download File
                   </button>
                 )}
               </li>

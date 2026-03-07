@@ -36,18 +36,21 @@ export class ErrorBoundary extends Component<Props, State> {
       // Return custom fallback UI or default error message
       return (
         this.props.fallback || (
-          <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
-              <h2 className="text-lg font-semibold text-red-800 mb-2">
+          <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center bg-[var(--paper-page)] dark:bg-[var(--paper-page-dark)]">
+            <div className="paper-panel p-6 max-w-md text-left">
+              <div className="inline-flex rounded-full border border-red-200/80 dark:border-red-900/40 bg-red-50/80 dark:bg-red-950/20 px-3 py-1 text-xs font-mono uppercase tracking-[0.2em] text-red-700 dark:text-red-300 mb-4">
+                Recovery mode
+              </div>
+              <h2 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
                 Something went wrong
               </h2>
-              <p className="text-red-600 mb-4">
+              <p className="text-red-700/85 dark:text-red-200/80 mb-4 leading-relaxed">
                 We&apos;re sorry, but an unexpected error occurred. Please
                 refresh the page and try again.
               </p>
               <button
                 onClick={() => window.location.reload()}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+                className="paper-btn px-4 py-2 text-sm"
               >
                 Refresh Page
               </button>

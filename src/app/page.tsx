@@ -2,19 +2,11 @@
 import { useRouter } from "next/navigation";
 import JoinRoomForm from "@/components/home/JoinRoomForm";
 import RoomCreationOptions from "@/components/home/RoomCreationOptions";
-import { FaGithub } from "react-icons/fa";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { useTheme } from "next-themes";
-import { useState, useEffect } from "react";
+import { FaGithub } from "react-icons/fa";
 
 export default function Home() {
   const router = useRouter();
-  const { theme } = useTheme();
-  const [bgImg, setBgImg] = useState("");
-
-  useEffect(() => {
-    setBgImg(theme === "dark" ? "/home-bg-dark.svg" : "/home-bg-light.svg");
-  }, [theme]);
 
   const handleJoinRoom = (roomId: string) => {
     router.push(`/${roomId}`);
@@ -25,147 +17,69 @@ export default function Home() {
   };
 
   return (
-    <main
-      className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-6 dark:from-gray-800 dark:to-gray-900"
-      style={{
-        backgroundImage: `url('${bgImg}')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
+    <main className="min-h-screen flex flex-col items-center justify-center px-5 py-8 sm:px-10 sm:py-12 relative overflow-hidden selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-24 left-[-4rem] h-72 w-72 rounded-full bg-white/30 blur-3xl dark:bg-stone-200/5" />
+        <div className="absolute bottom-0 right-[-5rem] h-80 w-80 rounded-full bg-amber-200/20 blur-3xl dark:bg-amber-100/5" />
       </div>
-      <div className="w-full max-w-4xl">
-        <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col md:flex-row dark:bg-gray-800">
-          {/* Left side - Hero image and branding */}
-          <div className="w-full md:w-1/2 bg-indigo-600 text-white p-8 flex flex-col justify-center dark:bg-gray-700">
-            <div className="m-6 p-2 bg-white rounded-lg shadow-lg flex items-center justify-center">
-              <img
-                className="h-20 md:w-full"
-                src="/logo.svg"
-                alt="header icon"
-              />
-            </div>
-            <p className="text-indigo-100 mb-6 dark:text-gray-300">
-              Real-time collaboration made simple. Share code and files
-              instantly.
-            </p>
 
-            <div className="hidden md:block relative h-64">
-              {/* Replace with your own image or illustration */}
-              <div className="absolute inset-0 bg-indigo-500 opacity-50 rounded-lg dark:bg-gray-600"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <img
-                  src="/hero-image.svg"
-                  alt="Hero Image"
-                  className="rounded-lg shadow-lg"
-                />
-              </div>
-            </div>
+      <div className="absolute top-5 right-5 flex items-center gap-3 z-10 rounded-full px-2 py-2 paper-card sm:top-6 sm:right-6">
+        <ThemeToggle />
+        <a
+          href="https://github.com/krchx/weshare"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="h-9 w-9 flex items-center justify-center rounded-full text-[var(--ink-soft)] hover:text-[var(--ink)] dark:text-[var(--ink-dark-soft)] dark:hover:text-[var(--ink-dark)] transition-colors"
+          title="View on GitHub"
+        >
+          <FaGithub size={24} />
+        </a>
+      </div>
 
-            <ul className="mt-8 space-y-2">
-              <li className="flex items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                Peer-to-peer file sharing
-              </li>
-              <li className="flex items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                Real-time code collaboration
-              </li>
-              <li className="flex items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                No account required
-              </li>
-            </ul>
+      <div className="w-full max-w-3xl relative z-10">
+        <div className="mb-10 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] dark:border-[var(--line-dark)] bg-white/30 dark:bg-white/5 px-4 py-2 text-[11px] font-mono uppercase tracking-[0.22em] text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] mb-5">
+            Soft matte workspace
           </div>
+          <h1 className="text-5xl md:text-7xl font-serif font-black tracking-[-0.05em] mb-4 text-[var(--ink)] dark:text-[var(--ink-dark)]">
+            WeShare
+          </h1>
+          <p className="text-base md:text-xl font-mono text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] max-w-2xl mx-auto leading-relaxed">
+            Real-time peer-to-peer file sharing and collaborative text editing.
+            Pure ephemeral connection.
+          </p>
+        </div>
 
-          {/* Right side - Room controls */}
-          <div className="w-full md:w-1/2 p-8 flex flex-col justify-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 dark:text-white">
-              Start Collaborating
+        <div className="paper-matte p-6 sm:p-10 lg:p-12 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-amber-100/10 dark:from-white/[0.03] dark:to-transparent pointer-events-none" />
+
+          <div className="relative z-10">
+            <h2 className="text-xl sm:text-2xl font-serif font-bold mb-6 flex items-center gap-3 text-[var(--ink)] dark:text-[var(--ink-dark)]">
+              <span className="text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] font-mono text-base font-normal opacity-70">
+                01.
+              </span>
+              Join Existing Session
             </h2>
-
-            {/* Join Room Form Component */}
             <JoinRoomForm onJoinRoom={handleJoinRoom} />
 
-            <div className="relative mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200 dark:border-gray-600"></div>
-              </div>
-              <div className="relative flex justify-center">
-                <span className="px-3 bg-white text-gray-500 text-sm dark:bg-gray-800 dark:text-gray-400">or</span>
-              </div>
+            <div className="my-10 border-t border-dashed border-[var(--line)] dark:border-[var(--line-dark)] relative">
+              <span className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--paper)]/90 dark:bg-[var(--paper-dark)]/90 px-4 font-mono text-sm text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)]">
+                OR
+              </span>
             </div>
 
-            {/* Room Creation Options Component */}
+            <h2 className="text-xl sm:text-2xl font-serif font-bold mb-6 flex items-center gap-3 text-[var(--ink)] dark:text-[var(--ink-dark)]">
+              <span className="text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] font-mono text-base font-normal opacity-70">
+                02.
+              </span>
+              Start New Session
+            </h2>
             <RoomCreationOptions onCreateRoom={handleCreateRoom} />
-
-            <p className="mt-6 text-center text-gray-600 text-sm dark:text-gray-400">
-              Create a room and share the URL with friends to collaborate!
-            </p>
-            <div className="mt-6 flex justify-center">
-              <a
-                href="https://github.com/krchx/weshare"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="items-center flex px-4 py-3 bg-gray-800 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors shadow-sm duration-200 dark:bg-gray-600 dark:hover:bg-gray-500"
-                aria-label="View source on GitHub"
-              >
-                <FaGithub className="w-7 h-7 mr-2" />
-                <span className="inline">GitHub Repo</span>
-              </a>
-            </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="mt-8 text-center text-gray-600 text-sm dark:text-gray-400">
-          <p>
-            No sign-up required. Your data stays between you and your peers.
-          </p>
-          <p className="mt-1">
-            © {new Date().getFullYear()} WeShare. All rights reserved.
-          </p>
+        <div className="mt-8 text-center font-mono text-xs sm:text-sm text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] flex flex-col items-center gap-2 tracking-[0.18em] uppercase">
+          <p>End-to-end WebRTC</p>
         </div>
       </div>
     </main>

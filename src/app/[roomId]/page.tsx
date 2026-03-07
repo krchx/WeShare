@@ -33,29 +33,29 @@ export default function Room() {
   };
 
   return (
-    <div
-      className="flex flex-col min-h-screen bg-gray-100 bg-cover bg-center bg-no-repeat"
-      style={{
-        backgroundImage: `url('/room-bg.svg')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <Header
-        roomId={roomId}
-        connected={connected}
-        isLoading={isTextLoading}
-      />
+    <div className="flex flex-col min-h-screen lg:h-[100dvh] bg-[var(--paper-page)] dark:bg-[var(--paper-page-dark)] text-[var(--ink)] dark:text-[var(--ink-dark)] selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black shrink-0 relative overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-16 left-8 h-64 w-64 rounded-full bg-white/20 blur-3xl dark:bg-stone-200/5" />
+        <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-amber-100/20 blur-3xl dark:bg-amber-100/5" />
+      </div>
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.3] dark:opacity-[0.14] mix-blend-overlay"
+        style={{ backgroundImage: "var(--noise-light)" }}
+      ></div>
 
-      <div className="flex flex-col md:flex-row flex-1">
-        <TextEditor
-          text={text}
-          onChange={handleTextChange}
-          disabled={isTextLoading}
-          isLoading={isTextLoading}
-        />
+      <Header roomId={roomId} connected={connected} isLoading={isTextLoading} />
 
-        <div className="flex flex-col md:w-80 border-2 border-gray-300 rounded-lg p-4 mx-4 my-2 md:my-4 bg-blue-300/30 backdrop-blur-sm">
+      <div className="flex flex-col lg:flex-row flex-1 w-full px-3 pb-3 pt-2 sm:px-4 sm:pb-4 gap-4 lg:gap-5 h-auto lg:h-[calc(100vh-90px)] lg:overflow-hidden z-10">
+        <div className="flex flex-col w-full flex-none min-h-[60vh] lg:flex-1 lg:min-h-0 lg:h-full overflow-hidden">
+          <TextEditor
+            text={text}
+            onChange={handleTextChange}
+            disabled={isTextLoading}
+            isLoading={isTextLoading}
+          />
+        </div>
+
+        <div className="flex flex-col lg:w-[360px] xl:w-[400px] shrink-0 gap-4 w-full lg:h-full lg:overflow-y-auto pb-2">
           <FileSharing
             downloadingFiles={downloadingFiles}
             localFiles={localFiles}
