@@ -141,14 +141,20 @@ export function useRoom() {
         cleanup();
       };
 
+      const handlePageHide = () => {
+        cleanup();
+      };
+
       // Register event listeners
       window.addEventListener("beforeunload", handleBeforeUnload);
       window.addEventListener("unload", handleUnload);
+      window.addEventListener("pagehide", handlePageHide);
 
       return () => {
         // Remove event listeners
         window.removeEventListener("beforeunload", handleBeforeUnload);
         window.removeEventListener("unload", handleUnload);
+        window.removeEventListener("pagehide", handlePageHide);
 
         // Cleanup room manager
         cleanup();

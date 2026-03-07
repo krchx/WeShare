@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { ShareRoomModal } from "./ShareRoomModal";
 import { FaGithub } from "react-icons/fa";
-import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { ThemeToggle } from "../ui/theme-toggle";
 import { CheckCircle2, LoaderCircle } from "lucide-react";
 

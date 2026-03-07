@@ -55,6 +55,9 @@ export class RoomManager
   private getFiles: () => SharedFile[];
   private connectionStatusInterval: NodeJS.Timeout | null = null;
   private textLoadingTimeout: NodeJS.Timeout | null = null;
+  private hasReceivedInitialState = false;
+  private stateRequestAttempts = 0;
+  private readonly maxStateRequestAttempts = 3;
 
   constructor(
     roomId: string,
@@ -177,6 +180,14 @@ export class RoomManager
       this.eventHandler.onUserJoined(joinMessage.data.userId);
     });
 
+    this.messageService.registerHandler("leader-announcement", (message) => {
+      const leaderMessage = message as Extract<
+        PeerMessage,
+        { type: "leader-announcement" }
+      >;
+      this.onLeaderChanged(leaderMessage.data);
+    });
+
     this.messageService.registerHandler("room-state-request", (message) => {
       this.stateService.handleStateRequest(
         message as Extract<PeerMessage, { type: "room-state-request" }>,
@@ -184,6 +195,7 @@ export class RoomManager
     });
 
     this.messageService.registerHandler("room-state-response", (message) => {
+      this.markStateSynced();
       this.stateService.handleStateResponse(
         message as Extract<PeerMessage, { type: "room-state-response" }>,
       );
@@ -236,7 +248,13 @@ export class RoomManager
       const leader = this.leadershipService.getCurrentLeader();
 
       if (this.peerId === leader?.peerId) {
+        this.markStateSynced();
         this.eventHandler.onTextUpdated(this.getText());
+      } else if (!leader && this.knownRemotePeerIds.size === 0) {
+        this.markStateSynced();
+        this.eventHandler.onTextUpdated(this.getText());
+      } else {
+        this.scheduleStateSyncFallback();
       }
 
       this.isInitialized = true;
@@ -262,11 +280,7 @@ export class RoomManager
 
     // Request room state if we are not the leader and don't have the state
     if (!this.leadershipService.getIsLeader()) {
-      const leader = this.leadershipService.getCurrentLeader();
-      if (leader && leader.peerId !== this.peerId) {
-        const stateRequest = this.stateService.createStateRequestMessage();
-        this.connectionService.sendToConnection(leader.peerId, stateRequest);
-      }
+      this.requestStateFromLeader();
     }
   }
 
@@ -312,6 +326,7 @@ export class RoomManager
 
   // LeadershipEventHandler implementation
   public onBecameLeader(leaderData: RoomLeaderData): void {
+    this.markStateSynced();
     this.eventHandler.onLeaderChanged(leaderData);
 
     // Announce leadership to all connected peers
@@ -322,11 +337,22 @@ export class RoomManager
 
   public onLeaderChanged(leaderData: RoomLeaderData | null): void {
     this.eventHandler.onLeaderChanged(leaderData);
+
+    if (!leaderData) {
+      this.scheduleStateSyncFallback();
+      return;
+    }
+
     if (leaderData && leaderData.peerId !== this.peerId) {
       if (!this.connectionService.isConnectedTo(leaderData.peerId)) {
         this.connectionService.connectToPeer(leaderData.peerId);
       }
+
+      this.requestStateFromLeader();
+      return;
     }
+
+    this.markStateSynced();
   }
 
   public onSteppedDown(): void {
@@ -341,6 +367,7 @@ export class RoomManager
 
   // StateEventHandler implementation
   public onTextUpdated(text: string): void {
+    this.markStateSynced();
     this.eventHandler.onTextUpdated(text);
   }
 
@@ -436,6 +463,9 @@ export class RoomManager
       this.textLoadingTimeout = null;
     }
 
+    const wasLeader =
+      this.leadershipService.getCurrentLeader()?.userId === this.userId;
+
     if (this.unsubscribePeerJoined) {
       this.unsubscribePeerJoined();
       this.unsubscribePeerJoined = null;
@@ -451,24 +481,91 @@ export class RoomManager
     this.messageService.clear();
     this.fileService.clear();
 
-    void this.cleanupRoomPresence();
+    void this.cleanupRoomPresence(wasLeader);
 
     this.peer.destroy();
     this.eventHandler.onConnectionStatusChanged(false);
     this.eventHandler.onDisconnected();
   }
 
-  private async cleanupRoomPresence(): Promise<void> {
+  private async cleanupRoomPresence(wasLeader: boolean): Promise<void> {
     try {
-      await FirebaseService.removePeerFromRoom(this.roomId, this.userId);
-
-      if (this.leadershipService.getCurrentLeader()?.userId === this.userId) {
+      if (wasLeader) {
         await FirebaseService.removeRoomLeader(this.roomId);
-      } else {
-        await FirebaseService.deleteRoomIfEmpty(this.roomId);
       }
+
+      await FirebaseService.removePeerFromRoom(this.roomId, this.userId);
+      await FirebaseService.deleteRoomIfEmpty(this.roomId);
     } catch {
       // Firebase onDisconnect still handles the common unload path.
+    }
+  }
+
+  private requestStateFromLeader(): void {
+    if (this.hasReceivedInitialState || this.leadershipService.getIsLeader()) {
+      return;
+    }
+
+    const leader = this.leadershipService.getCurrentLeader();
+    if (!leader || leader.peerId === this.peerId) {
+      this.scheduleStateSyncFallback();
+      return;
+    }
+
+    if (!this.connectionService.isConnectedTo(leader.peerId)) {
+      this.connectionService.connectToPeer(leader.peerId);
+      this.scheduleStateSyncFallback();
+      return;
+    }
+
+    const stateRequest = this.stateService.createStateRequestMessage();
+    const wasSent = this.connectionService.sendToConnection(
+      leader.peerId,
+      stateRequest,
+    );
+
+    if (!wasSent) {
+      this.scheduleStateSyncFallback();
+      return;
+    }
+
+    this.stateRequestAttempts += 1;
+    this.scheduleStateSyncFallback();
+  }
+
+  private scheduleStateSyncFallback(): void {
+    if (this.hasReceivedInitialState) {
+      return;
+    }
+
+    if (this.textLoadingTimeout) {
+      clearTimeout(this.textLoadingTimeout);
+    }
+
+    this.textLoadingTimeout = setTimeout(() => {
+      this.textLoadingTimeout = null;
+
+      if (this.hasReceivedInitialState) {
+        return;
+      }
+
+      if (this.stateRequestAttempts < this.maxStateRequestAttempts) {
+        this.requestStateFromLeader();
+        return;
+      }
+
+      this.markStateSynced();
+      this.eventHandler.onTextUpdated(this.getText());
+    }, 1500);
+  }
+
+  private markStateSynced(): void {
+    this.hasReceivedInitialState = true;
+    this.stateRequestAttempts = 0;
+
+    if (this.textLoadingTimeout) {
+      clearTimeout(this.textLoadingTimeout);
+      this.textLoadingTimeout = null;
     }
   }
 

@@ -41,10 +41,8 @@ export class FirebaseService {
   ): Promise<void> {
     try {
       const peerRef = ref(database, `rooms/${roomId}/peers/${userId}`);
+      await onDisconnect(peerRef).remove();
       await set(peerRef, peerData);
-
-      // Remove the peer data when disconnected
-      onDisconnect(peerRef).remove();
     } catch {
       throw new FirebaseError(
         "Failed to register peer in room. Please try again.",
@@ -180,10 +178,8 @@ export class FirebaseService {
   ): Promise<void> {
     try {
       const leaderRef = ref(database, `rooms/${roomId}/leader`);
+      await onDisconnect(leaderRef).remove();
       await set(leaderRef, leaderData);
-
-      // Remove the leader data when disconnected
-      onDisconnect(leaderRef).remove();
     } catch {
       throw new FirebaseError(
         "Failed to set room leader. Please try again.",
@@ -333,10 +329,22 @@ export class FirebaseService {
         leader?: RoomLeaderData;
       } | null;
 
-      const peerCount = roomData?.peers
-        ? Object.keys(roomData.peers).length
-        : 0;
-      const hasLeader = Boolean(roomData?.leader);
+      const peers = roomData?.peers ?? {};
+      const peerIds = Object.keys(peers);
+      const peerCount = peerIds.length;
+      const leader = roomData?.leader ?? null;
+      const hasLeader = Boolean(leader);
+      const leaderIsPresent = leader ? peerIds.includes(leader.userId) : false;
+
+      if (hasLeader && !leaderIsPresent) {
+        await remove(ref(database, `rooms/${roomId}/leader`));
+
+        if (peerCount === 0) {
+          await remove(roomRef);
+        }
+
+        return;
+      }
 
       if (peerCount === 0 && !hasLeader) {
         await remove(roomRef);

@@ -1,5 +1,4 @@
 import React, { useRef } from "react";
-import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { CheckCircle2, LoaderCircle } from "lucide-react";
 
 interface TextEditorProps {
@@ -35,13 +34,10 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         <div className="hidden sm:block" />
         <h1 className="text-2xl font-serif font-black flex items-center justify-center gap-2 text-center text-[var(--ink)] dark:text-[var(--ink-dark)] sm:col-start-2 sm:justify-self-center">
           Shared Workspace
-          {isLoading && (
-            <AiOutlineLoading3Quarters className="ml-3 animate-spin text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)] h-5 w-5" />
-          )}
         </h1>
         <div className="flex justify-center sm:col-start-3 sm:justify-self-end">
           {isLoading ? (
-            <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-medium tracking-[0.08em] text-amber-800 dark:text-amber-300 uppercase">
+            <span className="inline-flex items-center gap-2 rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-xs font-medium tracking-[0.08em] text-sky-800 dark:text-sky-300 uppercase">
               <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
               Syncing
             </span>
@@ -58,7 +54,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         {isLoading && (
           <div className="absolute inset-0 bg-[var(--paper)]/60 dark:bg-[var(--paper-dark)]/60 backdrop-blur-[2px] z-20 flex items-center justify-center">
             <div className="paper-card p-4 flex items-center gap-3">
-              <AiOutlineLoading3Quarters className="h-5 w-5 animate-spin text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)]" />
+              <LoaderCircle className="h-5 w-5 animate-spin text-[var(--ink-soft)] dark:text-[var(--ink-dark-soft)]" />
               <span className="text-sm font-mono font-bold">
                 Syncing state...
               </span>
